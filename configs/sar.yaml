@@ -8,6 +8,7 @@ INFERENCE:
 
 MODEL:
   IN_CHANNELS: 2
+  LOSS_TYPE: 'JaccardMoreLikeLoss'
 
 DATALOADER:
   MODE: 'sar'

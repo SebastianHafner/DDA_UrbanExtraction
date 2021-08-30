@@ -4,7 +4,7 @@ LOG_FREQ: 1000
 OUTPUT_BASE_DIR: '/storage/shafner/urban_extraction/networks'
 SAVE_CHECKPOINTS: [5, 10, 15, 20]
 INFERENCE:
-  CHECKPOINT: 20
+  CHECKPOINT: 15
   THRESHOLDS:
     TRAIN: 0.0
     VALIDATION: 0.0
@@ -13,7 +13,7 @@ MODEL:
   TYPE: 'dualstreamunet'
   OUT_CHANNELS: 1
   IN_CHANNELS: 12
-  LOSS_TYPE: 'JaccardLikeLoss'
+  LOSS_TYPE: 'JaccardMoreLikeLoss'
   POSITIVE_WEIGHT: 250
   NEGATIVE_WEIGHT: 1
   TOPOLOGY: [64, 128,]
@@ -48,7 +48,7 @@ DATASETS:
               'lima', 'paramaribo', 'libreville', 'djibuti', 'beirut', 'baghdad', 'athens', 'islamabad', 'hanoi',
               'bangkok', 'dhaka', 'bengaluru', 'taipeh', 'berlin', 'nanning', 'wuhan', 'daressalam', 'milano',
               'zhengzhou', 'hefei', 'xian', 'seoul', 'ibadan', 'benincity', 'abidjan', 'accra', 'amsterdam', 'riyadh',
-              'amman', 'damascus', 'nouakchott', 'prague']
+              'amman', 'damascus', 'nouakchott', 'prague', 'sanaa', 'dahmar', 'kuwaitcity', 'tindouf', 'tehran']
   TESTING: '/storage/shafner/urban_extraction/urban_dataset/sn7/'
 
 TRAINER:
@@ -71,4 +71,11 @@ CONSISTENCY_TRAINER:
   LOSS_FACTOR: 0.5
   WEIGHT_DECAY: 0.998
   APPLY_THRESHOLD: False
-  CONSISTENCY_LOSS_TYPE: 'JaccardLikeLoss'
+  CONSISTENCY_LOSS_TYPE: 'JaccardMoreLikeLoss'
+
+FINETUNING:
+  LOAD_CHECKPOINT: 15
+  EPOCHS: 40
+  CROP_SIZE: 128
+  LOG_FREQ: 100
+  AUGMENTATIONS: True

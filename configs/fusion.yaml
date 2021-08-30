@@ -7,8 +7,8 @@ INFERENCE:
     VALIDATION: 0.00
 
 MODEL:
-  TYPE: 'unet'
   IN_CHANNELS: 12
+  LOSS_TYPE: 'JaccardMoreLikeLoss'
 
 DATALOADER:
   MODE: 'fusion'

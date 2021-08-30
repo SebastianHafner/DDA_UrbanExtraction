@@ -1,0 +1,35 @@
+'''
+This is a global default file, each individual project will have their own respective default file
+'''
+from .config import CfgNode as CN
+
+C = CN()
+
+C.CONFIG_DIR = 'config/'
+C.OUTPUT_BASE_DIR = 'output/'
+
+# TRAINER SETTINGS
+C.TRAINER = CN()
+C.TRAINER.LR = 0.001
+C.TRAINER.BATCH_SIZE = 1
+C.TRAINER.CHECKPOINT_PERIOD = 5000
+C.TRAINER.EPOCHS = 1
+
+# DATALOADER SETTINGS
+C.DATALOADER = CN()
+C.DATALOADER.NUM_WORKER = 1
+C.DATALOADER.SHUFFLE = True
+
+# DATASET SETTINGS
+C.DATASETS = CN()
+C.DATASETS.TRAIN = ()
+C.DATASETS.TEST = ()
+
+# Model configs
+C.MODEL = CN()
+C.MODEL.BINARY_CLASSIFICATION = False
+C.MODEL.OUT_CHANNELS = 1
+C.MODEL.IN_CHANNELS = 3
+
+
+C.MAX_EPOCHS = 1

@@ -1,0 +1,17 @@
+_BASE_: "igarss_base.yaml"
+DEBUG: False
+INFERENCE:
+  CHECKPOINT: 40
+  THRESHOLDS:
+    TRAIN: 0.00
+    VALIDATION: 0.00
+
+MODEL:
+  TYPE: 'unet'
+  IN_CHANNELS: 12
+
+DATALOADER:
+  MODE: 'fusion'
+
+AUGMENTATION:
+  CHANNEL_DROPOUT: True

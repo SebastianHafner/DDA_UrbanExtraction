@@ -1,0 +1,15 @@
+_BASE_: "base.yaml"
+DEBUG: False
+INFERENCE:
+  CHECKPOINT: 20
+  THRESHOLDS:
+    TRAIN: 0.52
+    VALIDATION: 0.52
+
+MODEL:
+  TYPE: 'unet'
+  IN_CHANNELS: 12
+
+DATALOADER:
+  MODE: 'fusion'
+  FUSION_DROPOUT: True

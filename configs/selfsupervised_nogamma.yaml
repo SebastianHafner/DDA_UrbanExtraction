@@ -1,0 +1,5 @@
+_BASE_: "base_selfsupervised.yaml"
+DEBUG: False
+
+AUGMENTATION:
+  GAMMA_CORRECTION: False

@@ -1,0 +1,27 @@
+_BASE_: "base.yaml"
+DEBUG: False
+INFERENCE:
+  CHECKPOINT: 20
+  THRESHOLDS:
+    TRAIN: 0.00
+    VALIDATION: 0.00
+
+MODEL:
+  TYPE: 'unet'
+  IN_CHANNELS: 12
+
+DATALOADER:
+  MODE: 'fusion'
+
+
+DATASETS:
+  PATH: '/storage/shafner/urban_extraction/urban_dataset/'
+  TRAINING: ['albuquerque', 'atlanta', 'charlston', 'columbus', 'dallas', 'denver', 'houston',
+             'kansascity', 'lasvegas', 'losangeles', 'miami', 'minneapolis', 'montreal',
+             'quebec', 'saltlakecity', 'sandiego', 'seattle', 'toronto', 'winnipeg']
+
+
+AUGMENTATION:
+  RANDOM_FLIP: True
+  RANDOM_ROTATE: True
+  GAMMA_CORRECTION: False

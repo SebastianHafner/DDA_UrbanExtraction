@@ -1,0 +1,17 @@
+_BASE_: "base.yaml"
+DEBUG: False
+INFERENCE:
+  CHECKPOINT: 0
+  THRESHOLDS:
+    TRAIN: 0.00
+    VALIDATION: 0.00
+
+MODEL:
+  TYPE: 'unet'
+  IN_CHANNELS: 10
+
+DATALOADER:
+  MODE: 'optical'
+
+AUGMENTATION:
+  GAMMA_CORRECTION: False

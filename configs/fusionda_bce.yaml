@@ -1,0 +1,74 @@
+SEED: 7
+DEBUG: False
+LOG_FREQ: 1000
+OUTPUT_BASE_DIR: '/storage/shafner/urban_extraction/networks'
+SAVE_CHECKPOINTS: [5, 10, 15, 20]
+INFERENCE:
+  CHECKPOINT: 15
+  THRESHOLDS:
+    TRAIN: 0.0
+    VALIDATION: 0.0
+
+MODEL:
+  TYPE: 'dualstreamunet'
+  OUT_CHANNELS: 1
+  IN_CHANNELS: 12
+  LOSS_TYPE: 'JaccardLikeLoss'
+  POSITIVE_WEIGHT: 250
+  NEGATIVE_WEIGHT: 1
+  TOPOLOGY: [64, 128,]
+  BACKBONE:
+    ENABLED: False
+    TYPE: 'resnet34'
+    PRETRAINED_WEIGHTS: None
+
+DATALOADER:
+  NUM_WORKER: 8
+  SHUFFLE: True
+  LABEL: 'buildings'
+  LABEL_THRESH: 0.0
+  MODE: 'fusion'
+  SENTINEL1_BANDS: ['VV', 'VH']
+  SENTINEL2_BANDS: ['B2', 'B3', 'B4', 'B5', 'B6', 'B6', 'B8', 'B8A', 'B11', 'B12']
+  AUXILIARY_INPUTS: []
+  INCLUDE_UNLABELED: True
+
+
+DATASETS:
+  PATH: '/storage/shafner/urban_extraction/urban_dataset/'
+  TRAINING: ['albuquerque', 'atlanta', 'charlston', 'columbus', 'dallas', 'denver', 'elpaso', 'houston',
+             'kansascity', 'lasvegas', 'losangeles', 'miami', 'minneapolis', 'montreal', 'phoenix',
+             'quebec', 'saltlakecity', 'sandiego', 'santafe', 'seattle', 'stgeorge', 'toronto',
+             'tucson', 'winnipeg']
+  VALIDATION: ['calgary', 'newyork', 'sanfrancisco', 'vancouver']
+  UNLABELED: ['beijing', 'dakar', 'dubai', 'jakarta', 'kairo', 'kigali', 'lagos', 'mexicocity', 'mumbai',
+              'riodejanairo', 'shanghai', 'buenosaires', 'bogota', 'sanjose', 'santiagodechile', 'kapstadt', 'tripoli',
+              'freetown', 'london', 'madrid', 'kinshasa', 'manila', 'moscow', 'newdehli', 'nursultan', 'perth',
+              'tokio', 'stockholm', 'sidney', 'maputo', 'caracas', 'santacruzdelasierra', 'saopaulo', 'asuncion',
+              'lima', 'paramaribo', 'libreville', 'djibuti', 'beirut', 'baghdad', 'athens', 'islamabad', 'hanoi',
+              'bangkok', 'dhaka', 'bengaluru', 'taipeh', 'berlin', 'nanning', 'wuhan', 'daressalam', 'milano',
+              'zhengzhou', 'hefei', 'xian', 'seoul', 'ibadan', 'benincity', 'abidjan', 'accra', 'amsterdam', 'riyadh',
+              'amman', 'damascus', 'nouakchott', 'prague']
+  TESTING: '/storage/shafner/urban_extraction/urban_dataset/sn7/'
+
+TRAINER:
+  LR: 1e-4
+  BATCH_SIZE: 8
+  EPOCHS: 20
+  OPTIMIZER: 'adamw'
+
+AUGMENTATION:
+  IMAGE_OVERSAMPLING_TYPE: 'none' # [none, simple]
+  RANDOM_FLIP: True
+  RANDOM_ROTATE: True
+  COLOR_SHIFT: False
+  GAMMA_CORRECTION: True
+  DOWNSCALE: []
+  SENSOR_DROPOUT: False
+  CHANNEL_DROPOUT: False
+
+CONSISTENCY_TRAINER:
+  LOSS_FACTOR: 0.1
+  WEIGHT_DECAY: 0.998
+  APPLY_THRESHOLD: False
+  CONSISTENCY_LOSS_TYPE: 'BCEWithLogitsLoss'

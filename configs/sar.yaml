@@ -1,0 +1,13 @@
+_BASE_: "base.yaml"
+DEBUG: False
+INFERENCE:
+  CHECKPOINT: 15
+  THRESHOLDS:
+    TRAIN: 0.00
+    VALIDATION: 0.00
+
+MODEL:
+  IN_CHANNELS: 2
+
+DATALOADER:
+  MODE: 'sar'

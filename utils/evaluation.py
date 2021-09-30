@@ -62,29 +62,6 @@ def model_evaluation(net, cfg, device, thresholds: torch.Tensor, run_type: str, 
     return argmax_f1.item()
 
 
-# for regression
-def model_evaluation_regression(net, cfg, device, run_type: str, epoch: float, step: int, max_samples: int = None):
-
-    measurer = metrics.RegressionEvaluation()
-
-    def evaluate(y_true, y_pred):
-        y_true = y_true.detach()
-        y_pred = y_pred.detach()
-        measurer.add_sample(y_true, y_pred)
-
-    dataset = datasets.SelfsupervisedUrbanExtractionDataset(cfg=cfg, dataset=run_type, no_augmentations=True)
-    inference_loop(net, cfg, device, evaluate, max_samples=max_samples, dataset=dataset)
-
-    print(f'Computing {run_type} RMSE ', end=' ', flush=True)
-    rmse = measurer.root_mean_square_error()
-    print(f'{rmse.item():.3f}', flush=True)
-
-    if not cfg.DEBUG:
-        wandb.log({f'{run_type} RMSE': rmse.item(),
-                   'step': step, 'epoch': epoch,
-                   })
-
-
 def model_testing(net, cfg, device, argmax, step, epoch):
 
     net.eval()
@@ -139,44 +116,6 @@ def model_testing(net, cfg, device, argmax, step, epoch):
     for group_index, group_name in dataset.group_names.items():
         evaluate_group(group_name)
     evaluate_group('total')
-
-
-def model_testing_cucd(net, cfg, device, step, epoch):
-    net.eval()
-
-    # loading dataset
-    dataset = datasets.CUCDTestingDataset(cfg)
-
-    y_preds, y_trues = [], []
-
-    for index in tqdm(range(len(dataset))):
-        sample = dataset.__getitem__(index)
-
-        with torch.no_grad():
-            x = sample['x'].to(device)
-            y_true = sample['y'].to(device)
-            logits = net(x.unsqueeze(0))
-            y_pred = torch.sigmoid(logits) > 0.5
-            y_true = y_true.detach().cpu().flatten().numpy()
-            not_nan = ~np.isnan(y_true)
-            y_trues.append(y_true[not_nan])
-            y_pred = y_pred.detach().cpu().flatten().numpy()
-            y_preds.append(y_pred[not_nan])
-
-    y_trues = torch.Tensor(np.concatenate(y_trues))
-    y_preds = torch.Tensor(np.concatenate(y_preds))
-    prec = metrics.precision(y_trues, y_preds, dim=0).item()
-    rec = metrics.recall(y_trues, y_preds, dim=0).item()
-    f1 = metrics.f1_score(y_trues, y_preds, dim=0).item()
-
-    print(f'F1 {f1:.3f} - Precision {prec:.3f} - Recall {rec:.3f}')
-
-    if not cfg.DEBUG:
-        wandb.log({f'F1': f1,
-                   f'precision': prec,
-                   f'recall': rec,
-                   'step': step, 'epoch': epoch,
-                   })
 
 
 def inference_loop(net, cfg, device, callback=None, batch_size: int = 1, max_samples: int = None,

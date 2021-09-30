@@ -18,6 +18,7 @@ from utils.augmentations import *
 from utils.loss import get_criterion
 from utils.evaluation import model_evaluation, model_testing
 
+
 from experiment_manager.args import default_argument_parser
 from experiment_manager.config import config
 
@@ -35,13 +36,10 @@ def run_training(cfg):
              }
     print(tabulate(table, headers='keys', tablefmt="fancy_grid", ))
 
-    if not cfg.RESUME_CHECKPOINT:
-        net = create_network(cfg)
-        net.to(device)
-        optimizer = optim.AdamW(net.parameters(), lr=cfg.TRAINER.LR, weight_decay=0.01)
-        global_step = 0
-    else:
-        net, optimizer, global_step = load_checkpoint(cfg.RESUME_CHECKPOINT, cfg, device)
+    net = create_network(cfg)
+    net.to(device)
+    optimizer = optim.AdamW(net.parameters(), lr=cfg.TRAINER.LR, weight_decay=0.01)
+    global_step = 0
 
     sar_criterion = get_criterion(cfg.MODEL.LOSS_TYPE)
     optical_criterion = get_criterion(cfg.MODEL.LOSS_TYPE)

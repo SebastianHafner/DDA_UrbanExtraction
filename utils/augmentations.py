@@ -19,16 +19,6 @@ def compose_transformations(cfg):
     if cfg.AUGMENTATION.GAMMA_CORRECTION:
         transformations.append(GammaCorrection())
 
-    if cfg.AUGMENTATION.DOWNSCALE:
-        for f in cfg.AUGMENTATION.DOWNSCALE:
-            transformations.append(DownScale(f))
-
-    if cfg.AUGMENTATION.SENSOR_DROPOUT:
-        transformations.append(SensorDropout(cfg))
-
-    if cfg.AUGMENTATION.CHANNEL_DROPOUT:
-        transformations.append(ChannelDropout(cfg))
-
     transformations.append(Numpy2Torch())
 
     return transforms.Compose(transformations)

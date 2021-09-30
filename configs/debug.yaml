@@ -1,0 +1,56 @@
+SEED: 7
+DEBUG: True
+LOG_FREQ: 1000
+SAVE_CHECKPOINTS: [5, 10, 15]
+INFERENCE:
+  CHECKPOINT: 0
+  THRESHOLDS:
+    TRAIN: 0.0
+    VALIDATION: 0.0
+
+MODEL:
+  TYPE: 'unet'
+  OUT_CHANNELS: 1
+  IN_CHANNELS: 12
+  LOSS_TYPE: 'JaccardLikeLoss'
+  TOPOLOGY: [64, 128,]
+
+DATALOADER:
+  NUM_WORKER: 8
+  SHUFFLE: True
+  LABEL: 'buildings'
+  MODE: 'fusion'
+  SENTINEL1_BANDS: ['VV', 'VH']
+  SENTINEL2_BANDS: ['B2', 'B3', 'B4', 'B5', 'B6', 'B6', 'B8', 'B8A', 'B11', 'B12']
+  INCLUDE_UNLABELED: False
+
+DATASETS:
+  TRAINING: ['albuquerque', 'atlanta', 'charlston', 'columbus', 'dallas', 'denver', 'elpaso', 'houston',
+             'kansascity', 'lasvegas', 'losangeles', 'miami', 'minneapolis', 'montreal', 'phoenix',
+             'quebec', 'saltlakecity', 'sandiego', 'santafe', 'seattle', 'stgeorge', 'toronto',
+             'tucson', 'winnipeg']
+  VALIDATION: ['calgary', 'newyork', 'sanfrancisco', 'vancouver']
+  UNLABELED: ['beijing', 'dakar', 'dubai', 'jakarta', 'kairo', 'kigali', 'lagos', 'mexicocity', 'mumbai',
+              'riodejanairo', 'shanghai', 'buenosaires', 'bogota', 'sanjose', 'santiagodechile', 'kapstadt', 'tripoli',
+              'freetown', 'london', 'madrid', 'kinshasa', 'manila', 'moscow', 'newdehli', 'nursultan', 'perth',
+              'tokio', 'stockholm', 'sidney', 'maputo', 'caracas', 'santacruzdelasierra', 'saopaulo', 'asuncion',
+              'lima', 'paramaribo', 'libreville', 'djibuti', 'beirut', 'baghdad', 'athens', 'islamabad', 'hanoi',
+              'bangkok', 'dhaka', 'bengaluru', 'taipeh', 'berlin', 'nanning', 'wuhan', 'daressalam', 'milano']
+
+TRAINER:
+  LR: 1e-4
+  BATCH_SIZE: 8
+  EPOCHS: 20
+  OPTIMIZER: 'adamw'
+
+AUGMENTATION:
+  IMAGE_OVERSAMPLING_TYPE: 'none' # [none, simple]
+  RANDOM_FLIP: True
+  RANDOM_ROTATE: True
+  COLOR_SHIFT: False
+  GAMMA_CORRECTION: True
+
+CONSISTENCY_TRAINER:
+  LOSS_FACTOR: 0.1
+  WEIGHT_DECAY: 0.998
+  CONSISTENCY_LOSS_TYPE: 'JaccardLikeLoss'

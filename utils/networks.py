@@ -1,7 +1,59 @@
-from collections import OrderedDict
-import torch.nn.functional as F
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
+from collections import OrderedDict
+
+from pathlib import Path
+
+from utils import paths
+
+
+def create_network(cfg):
+    return DualStreamUNet(cfg) if cfg.MODEL.TYPE == 'dualstreamunet' else UNet(cfg)
+
+
+def load_network(cfg, pkl_file: Path):
+    net = create_network(cfg)
+    state_dict = torch.load(str(pkl_file), map_location=lambda storage, loc: storage)
+    net.load_state_dict(state_dict)
+    return net
+
+
+def get_network(cfg):
+    if not cfg.RESUME_CHECKPOINT:
+        net = create_network(cfg)
+        optimizer = torch.optim.AdamW(net.parameters(), lr=cfg.TRAINER.LR, weight_decay=0.01)
+    else:
+        net, optimizer = load_checkpoint(cfg.RESUME_CHECKPOINT, cfg)
+    return net, optimizer
+
+
+def save_checkpoint(network, optimizer, epoch, step, cfg):
+    dirs = paths.load_paths()
+    save_file = Path(dirs.OUTPUT) / f'{cfg.NAME}_checkpoint{epoch}.pt'
+    checkpoint = {
+        'step': step,
+        'network': network.state_dict(),
+        'optimizer': optimizer.state_dict()
+    }
+    torch.save(checkpoint, save_file)
+
+
+def load_checkpoint(epoch, cfg, device):
+    net = create_network(cfg)
+    net.to(device)
+
+    dirs = paths.load_paths()
+    save_file = Path(dirs.OUTPUT) / f'{cfg.NAME}_checkpoint{epoch}.pt'
+    checkpoint = torch.load(save_file, map_location=device)
+
+    optimizer = torch.optim.AdamW(net.parameters(), lr=cfg.TRAINER.LR, weight_decay=0.01)
+
+    net.load_state_dict(checkpoint['network'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
+
+    return net, optimizer, checkpoint['step']
 
 
 class UNet(nn.Module):
@@ -24,19 +76,19 @@ class UNet(nn.Module):
         down_topo = topology
         down_dict = OrderedDict()
         n_layers = len(down_topo)
-        up_topo = [first_chan] # topography upwards
+        up_topo = [first_chan]  # topography upwards
         up_dict = OrderedDict()
 
         # Downward layers
         for idx in range(n_layers):
-            is_not_last_layer = idx != n_layers-1
+            is_not_last_layer = idx != n_layers - 1
             in_dim = down_topo[idx]
-            out_dim = down_topo[idx+1] if is_not_last_layer else down_topo[idx]  # last layer
+            out_dim = down_topo[idx + 1] if is_not_last_layer else down_topo[idx]  # last layer
 
             layer = Down(in_dim, out_dim, DoubleConv)
 
-            print(f'down{idx+1}: in {in_dim}, out {out_dim}')
-            down_dict[f'down{idx+1}'] = layer
+            print(f'down{idx + 1}: in {in_dim}, out {out_dim}')
+            down_dict[f'down{idx + 1}'] = layer
             up_topo.append(out_dim)
         self.down_seq = nn.ModuleDict(down_dict)
 
@@ -50,8 +102,8 @@ class UNet(nn.Module):
 
             layer = Up(in_dim, out_dim, DoubleConv)
 
-            print(f'up{idx+1}: in {in_dim}, out {out_dim}')
-            up_dict[f'up{idx+1}'] = layer
+            print(f'up{idx + 1}: in {in_dim}, out {out_dim}')
+            up_dict[f'up{idx + 1}'] = layer
 
         self.up_seq = nn.ModuleDict(up_dict)
 
@@ -86,7 +138,6 @@ class DualStreamUNet(nn.Module):
         out = cfg.MODEL.OUT_CHANNELS
         topology = cfg.MODEL.TOPOLOGY
         out_dim = topology[0]
-
 
         # sentinel-1 sar unet stream
         sar_in = len(cfg.DATALOADER.SENTINEL1_BANDS)

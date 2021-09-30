@@ -1,14 +1,7 @@
 from pathlib import Path
-from networks.network_loader import load_checkpoint
-from utils.datasets import UrbanExtractionDataset
-from experiment_manager.config import config
 from utils.metrics import *
 from tqdm import tqdm
-from torch.utils import data as torch_data
 import torch
-import numpy as np
-import json
-import matplotlib.pyplot as plt
 from utils.visualization import *
 import matplotlib as mpl
 

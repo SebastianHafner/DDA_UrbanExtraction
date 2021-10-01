@@ -4,23 +4,14 @@ import os
 import timeit
 
 import torch
-import torch.nn as nn
-from torch.utils import data as torch_data
 from torch import optim
+from torch.utils import data as torch_data
 
 from tabulate import tabulate
 import wandb
+import numpy as np
 
-from networks.network_loader import create_network, save_checkpoint, load_checkpoint
-
-from utils.datasets import UrbanExtractionDataset
-from utils.augmentations import *
-from utils.loss import get_criterion
-from utils.evaluation import model_evaluation, model_testing
-
-
-from experiment_manager.args import default_argument_parser
-from experiment_manager.config import config
+from utils import networks, datasets, loss_functions, evaluation, experiment_manager
 
 
 def run_training(cfg):
@@ -36,18 +27,19 @@ def run_training(cfg):
              }
     print(tabulate(table, headers='keys', tablefmt="fancy_grid", ))
 
-    net = create_network(cfg)
+    net = networks.create_network(cfg)
     net.to(device)
     optimizer = optim.AdamW(net.parameters(), lr=cfg.TRAINER.LR, weight_decay=0.01)
+
     global_step = 0
 
-    sar_criterion = get_criterion(cfg.MODEL.LOSS_TYPE)
-    optical_criterion = get_criterion(cfg.MODEL.LOSS_TYPE)
-    fusion_criterion = get_criterion(cfg.MODEL.LOSS_TYPE)
-    consistency_criterion = get_criterion(cfg.CONSISTENCY_TRAINER.CONSISTENCY_LOSS_TYPE)
+    sar_criterion = loss_functions.get_criterion(cfg.MODEL.LOSS_TYPE)
+    optical_criterion = loss_functions.get_criterion(cfg.MODEL.LOSS_TYPE)
+    fusion_criterion = loss_functions.get_criterion(cfg.MODEL.LOSS_TYPE)
+    consistency_criterion = loss_functions.get_criterion(cfg.CONSISTENCY_TRAINER.CONSISTENCY_LOSS_TYPE)
 
     # reset the generators
-    dataset = UrbanExtractionDataset(cfg=cfg, dataset='training')
+    dataset = datasets.UrbanExtractionDataset(cfg=cfg, dataset='training')
     print(dataset)
 
     dataloader_kwargs = {
@@ -61,14 +53,16 @@ def run_training(cfg):
 
     # unpacking cfg
     epochs = cfg.TRAINER.EPOCHS
-    start_epoch = epoch_float = cfg.RESUME_CHECKPOINT
     save_checkpoints = cfg.SAVE_CHECKPOINTS
     steps_per_epoch = len(dataloader)
 
-    # for loggingfusi
+    # tracking variables
+    global_step = epoch_float = 0
+
+    # for logging
     thresholds = torch.linspace(0, 1, 101)
 
-    for epoch in range(start_epoch + 1, epochs + 1):
+    for epoch in range(1, epochs + 1):
         print(f'Starting epoch {epoch}/{epochs}.')
 
         start = timeit.default_timer()
@@ -135,10 +129,10 @@ def run_training(cfg):
                 print(f'Logging step {global_step} (epoch {epoch_float:.2f}).')
 
                 # evaluation on sample of training and validation set
-                train_argmaxF1 = model_evaluation(net, cfg, device, thresholds, 'training', epoch_float, global_step,
-                                                  max_samples=1_000)
-                _ = model_evaluation(net, cfg, device, thresholds, 'validation', epoch_float, global_step,
-                                     specific_index=train_argmaxF1, max_samples=1_000)
+                train_argmaxF1 = evaluation.model_evaluation(net, cfg, device, thresholds, 'training', epoch_float,
+                                                             global_step, max_samples=1_000)
+                _ = evaluation.model_evaluation(net, cfg, device, thresholds, 'validation', epoch_float,
+                                                global_step, specific_index=train_argmaxF1, max_samples=1_000)
 
                 # logging
                 time = timeit.default_timer() - start
@@ -168,25 +162,27 @@ def run_training(cfg):
             assert (epoch == epoch_float)
         if epoch in save_checkpoints and not cfg.DEBUG:
             print(f'saving network', flush=True)
-            save_checkpoint(net, optimizer, epoch, global_step, cfg)
+            networks.save_checkpoint(net, optimizer, epoch, global_step, cfg)
 
             # logs to load network
-            train_argmaxF1 = model_evaluation(net, cfg, device, thresholds, 'training', epoch_float, global_step)
-            validation_argmaxF1 = model_evaluation(net, cfg, device, thresholds, 'validation', epoch_float, global_step,
-                                                   specific_index=train_argmaxF1)
+            train_argmaxF1 = evaluation.model_evaluation(net, cfg, device, thresholds, 'training', epoch_float,
+                                                         global_step)
+            validation_argmaxF1 =evaluation.model_evaluation(net, cfg, device, thresholds, 'validation', epoch_float,
+                                                             global_step, specific_index=train_argmaxF1)
             wandb.log({
                 'net_checkpoint': epoch,
                 'checkpoint_step': global_step,
                 'train_threshold': train_argmaxF1 / 100,
                 'validation_threshold': validation_argmaxF1 / 100
             })
-            model_testing(net, cfg, device, 50, global_step, epoch_float)
+            if cfg.DATASETS.TESTING is not None:
+                evaluation.model_testing(net, cfg, device, 50, global_step, epoch_float)
 
 
 if __name__ == '__main__':
 
-    args = default_argument_parser().parse_known_args()[0]
-    cfg = config.setup(args)
+    args = experiment_manager.default_argument_parser().parse_known_args()[0]
+    cfg = experiment_manager.setup_cfg(args)
 
     # make training deterministic
     torch.manual_seed(cfg.SEED)

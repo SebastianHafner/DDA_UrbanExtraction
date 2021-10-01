@@ -1,35 +1,41 @@
 from pathlib import Path
-import torch
-from networks.network_loader import load_checkpoint
-from experiment_manager.config import config
-from utils.datasets import TilesInferenceDataset
-from utils.geotiff import *
-from tqdm import tqdm
 import numpy as np
-from utils.metrics import *
-import matplotlib.pyplot as plt
+import json
+import torch
+from tqdm import tqdm
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+from utils import metrics, geofiles, visualization, experiment_manager, networks, datasets, paths
 from sklearn.metrics import precision_recall_curve
 
-ROOT_PATH = Path('/storage/shafner/urban_extraction')
-CONFIG_PATH = Path('/home/shafner/urban_dl/configs')
+FONTSIZE = 20
+mpl.rcParams.update({'font.size': FONTSIZE})
+
+GROUPS = [(1, 'NA_AU', '#63cd93'), (2, 'SA', '#f0828f'), (3, 'EU', '#6faec9'), (4, 'SSA', '#5f4ad9'),
+          (5, 'NAF_ME', '#8dee47'), (6, 'AS', '#d9b657'), ('total', 'Total', '#ffffff')]
+GROUP_NAMES = ['NA_AU', 'SA', 'EU', 'SSA', 'NAF_ME', 'AS']
+COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
 
 
 def run_inference(config_name: str, site: str, root_path: Path = None):
     print(f'running inference for {site} with {config_name}...')
+
+    dirs = paths.load_paths()
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # loading config and network
-    cfg = config.load_cfg(Path.cwd() / 'configs' / f'{config_name}.yaml')
-    net, _, _ = load_checkpoint(cfg.INFERENCE.CHECKPOINT, cfg, device)
+    cfg = experiment_manager.load_cfg(config_name)
+    net, _, _ = networks.load_checkpoint(cfg.INFERENCE.CHECKPOINT, cfg, device)
     net.eval()
 
     # loading dataset from config (requires inference.json)
-    dataset = TilesInferenceDataset(cfg, site, root_path)
+    dataset = datasets.TilesInferenceDataset(cfg, site, root_path)
 
     # config inference directory
-    save_path = ROOT_PATH / 'inference' / config_name
-    save_path.mkdir(exist_ok=True)
+    inference_dir = Path(dirs.OUTPUT) / 'inference'
+    inference_dir.mkdir(exist_ok=True)
 
     prob_output = dataset.get_arr()
     transform, crs = dataset.get_geo()
@@ -50,16 +56,17 @@ def run_inference(config_name: str, site: str, root_path: Path = None):
             j_end = j_start + dataset.patch_size
             prob_output[i_start:i_end, j_start:j_end, 0] = center_prob
 
-    output_file = save_path / f'prob_{site}_{config_name}.tif'
-    write_tif(output_file, prob_output, transform, crs)
+    output_file = inference_dir / config_name / f'prob_{site}_{config_name}.tif'
+    output_file.parent.mdkir(exist_ok=True)
+    geofiles.write_tif(output_file, prob_output, transform, crs)
 
 
-def produce_label(config_name: str, site: str, root_path=None):
+def produce_label(config_name: str,site: str, root_path=None):
     print(f'producing label for {site} with {config_name}...')
 
     # loading config and dataset
-    cfg = config.load_cfg(Path.cwd() / 'configs' / f'{config_name}.yaml')
-    dataset = TilesInferenceDataset(cfg, site, root_path)
+    cfg = experiment_manager.load_cfg(config_name)
+    dataset = datasets.TilesInferenceDataset(cfg, site, root_path)
 
     # config inference directory
     save_path = ROOT_PATH / 'inference' / config_name
@@ -89,13 +96,13 @@ def run_quantitative_evaluation(config_name: str, site: str, threshold: float = 
     # loading config and network
     cfg = config.load_cfg(Path.cwd() / 'configs' / f'{config_name}.yaml')
     net_file = Path(cfg.OUTPUT_BASE_DIR) / f'{config_name}_{cfg.INFERENCE.CHECKPOINT}.pkl'
-    net = load_network(cfg, net_file)
+    net = networks.load_network(cfg)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     net.to(device)
     net.eval()
 
     # loading dataset from config (requires inference.json)
-    dataset = TilesInferenceDataset(cfg, site)
+    dataset = datasets.TilesInferenceDataset(cfg, site)
 
     y_probs, y_trues = None, None
 
@@ -131,17 +138,15 @@ def run_quantitative_evaluation(config_name: str, site: str, threshold: float = 
             np.save(output_file, output_data)
         else:
             y_preds = (y_probs > thresh).float()
-            prec = precision(y_trues, y_preds, dim=0)
-            rec = recall(y_trues, y_preds, dim=0)
-            f1 = f1_score(y_trues, y_preds, dim=0)
+            prec = metrics.precision(y_trues, y_preds, dim=0)
+            rec = metrics.recall(y_trues, y_preds, dim=0)
+            f1 = metrics.f1_score(y_trues, y_preds, dim=0)
             print(f'{site}: f1 score {f1:.3f} - precision {prec:.3f} - recall {rec:.3f}')
 
 
 def plot_precision_recall_curve(site: str, config_names: list, names: list = None, show_legend: bool = False,
                                 save_plot: bool = False):
     fig, ax = plt.subplots()
-    fontsize = 18
-    mpl.rcParams.update({'font.size': fontsize})
 
     # getting data and if not available produce
     for i, config_name in enumerate(config_names):
@@ -173,85 +178,24 @@ def plot_precision_recall_curve(site: str, config_names: list, names: list = Non
     plt.close(fig)
 
 
-if __name__ == '__main__':
-    config_name = 'sar'
-    cities_igarss = ['stockholm', 'kampala', 'daressalam', 'sidney', 'newyork', 'sanfrancisco']
-
-    cities_sdg = ['beijing2016', 'beijing2020', 'cairo2016', 'cairo2020', 'dubai2016', 'dubai2020', 'kigali2016',
-                  'kigali2020', 'riodejanairo2016', 'riodejanairo2020', 'stockholm2016', 'stockholm2020']
-
-    # cities_sdg = ['charleston2016', 'charleston2020', 'daressalaam2016', 'daressalaam2020', 'detroit2016',
-    #               'detroit2020', 'guangzhou2016', 'guangzhou2020', 'heidelberg2016', 'heidelberg2020',
-    #               'lagos2016', 'lagos2020', 'lapaz2016', 'lapaz2020', 'mexicocity2016', 'mexicocity2020',
-    #               'mumbai2016', 'mumbai2020', 'nairobi2016', 'nairobi2020', 'newyork2016', 'newyork2020',
-    #               'nouakchott2016', 'nouakchott2020', 'shanghai2016', 'shanghai2020', 'sydney2016', 'sydney2020']
-    all_cities = ['calgary', 'newyork', 'sanfrancisco', 'vancouver', 'beijing', 'dakar', 'dubai', 'jakarta', 'kairo',
-                  'kigali', 'lagos', 'mexicocity', 'mumbai', 'riodejanairo', 'shanghai', 'buenosaires', 'bogota',
-                  'sanjose', 'santiagodechile', 'kapstadt', 'tripoli', 'freetown', 'london', 'madrid', 'kinshasa',
-                  'manila', 'moscow', 'newdehli', 'nursultan', 'perth', 'tokio', 'stockholm', 'sidney', 'maputo',
-                  'caracas', 'santacruzdelasierra', 'saopaulo', 'asuncion', 'lima', 'paramaribo', 'libreville',
-                  'djibuti', 'beirut', 'baghdad', 'athens', 'islamabad', 'hanoi', 'bangkok', 'dhaka', 'bengaluru',
-                  'taipeh', 'berlin', 'nanning', 'wuhan', 'daressalam', 'milano', 'zhengzhou', 'hefei', 'xian',
-                  'seoul', 'ibadan', 'benincity', 'abidjan', 'accra', 'amsterdam', 'riyadh', 'amman', 'damascus',
-                  'nouakchott', 'prague', 'sanaa', 'dahmar', 'kuwaitcity', 'tindouf', 'tehran']
-
-    dragon_cities = ['beijing', 'shanghai', 'hefei', 'nanning', 'wuhan', 'xian', 'zhengzhou']
-
-    for i, city in enumerate(dragon_cities):
-        legend = True if city == 'stockholm' else False
-        # run_inference(config_name, city, Path('/storage/shafner/urban_extraction/sdg_dataset/'))
-        # produce_label(config_name, city)
-        run_inference(config_name, city)
-        # run_quantitative_evaluation(config_name, city, threshold=0.5, save_output=True)
-
-        # plot_precision_recall_curve(city, ['igarss_sar', 'igarss_optical', 'igarss_fusion', 'ghsl'],
-        #                             names=['SAR', 'Optical', 'Fusion', 'GHS-S2'], show_legend=True,
-        #                             save_plot=True)
-
-        # plot_precision_recall_curve(city, ['igarss_fusion', 'igarss_sensordropout', 'igarss_channeldropout'],
-        #                             names=['Fusion', 'Fusion-SD', 'Fusion-CD'], show_legend=legend,
-        #                             save_plot=True)
-
-from utils.visualization import *
-from pathlib import Path
-import numpy as np
-import json
-import torch
-from tqdm import tqdm
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-from networks.network_loader import load_checkpoint
-from utils.datasets import SpaceNet7Dataset
-from experiment_manager.config import config
-from utils.metrics import *
-from utils.geotiff import *
-from sklearn.metrics import precision_recall_curve
-
-URBAN_EXTRACTION_PATH = Path('/storage/shafner/urban_extraction')
-ROOT_PATH = Path('/storage/shafner/urban_extraction')
-DATASET_PATH = Path('/storage/shafner/urban_extraction/urban_dataset')
-CONFIG_PATH = Path('/home/shafner/urban_dl/configs')
-NETWORK_PATH = Path('/storage/shafner/urban_extraction/networks/')
-ROOT_PATH = Path('/storage/shafner/urban_extraction')
-
-mpl.rcParams.update({'font.size': 20})
-
-GROUPS = [(1, 'NA_AU', '#63cd93'), (2, 'SA', '#f0828f'), (3, 'EU', '#6faec9'), (4, 'SSA', '#5f4ad9'),
-          (5, 'NAF_ME', '#8dee47'), (6, 'AS', '#d9b657'), ('total', 'Total', '#ffffff')]
-GROUP_NAMES = ['NA_AU', 'SA', 'EU', 'SSA', 'NAF_ME', 'AS']
-COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
 
 
-def run_quantitative_inference(config_name: str):
+
+
+
+
+# SpaceNet7 testing
+
+
+def run_quantitative_inference_sn7(config_name: str):
     # loading config and network
-    cfg = config.load_cfg(Path.cwd() / 'configs' / f'{config_name}.yaml')
+    cfg = experiment_manager.load_cfg(config_name)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    net, _, _ = load_checkpoint(cfg.INFERENCE.CHECKPOINT, cfg, device)
+    net, _, _ = networks.load_checkpoint(cfg.INFERENCE.CHECKPOINT, cfg, device)
     net.eval()
 
     # loading dataset from config (requires inference.json)
-    dataset = SpaceNet7Dataset(cfg)
+    dataset = datasets.SpaceNet7Dataset(cfg)
 
     data = {}
     with torch.no_grad():
@@ -269,9 +213,9 @@ def run_quantitative_inference(config_name: str):
             if group_name not in data.keys():
                 data[group_name] = []
 
-            f1 = f1_score_from_prob(y_prob, y_true, 0.5)
-            p = precsision_from_prob(y_prob, y_true, 0.5)
-            r = recall_from_prob(y_prob, y_true, 0.5)
+            f1 = metrics.f1_score_from_prob(y_prob, y_true, 0.5)
+            p = metrics.precsision_from_prob(y_prob, y_true, 0.5)
+            r = metrics.recall_from_prob(y_prob, y_true, 0.5)
 
             site_data = {
                 'aoi_id': test_site['aoi_id'],
@@ -284,16 +228,18 @@ def run_quantitative_inference(config_name: str):
 
             data[group_name].append(site_data)
 
-        output_file = ROOT_PATH / 'testing' / f'probabilities_{config_name}.npy'
+        dirs = paths.load_paths()
+        output_file = Path(dirs.OUTPUT) / 'testing' / f'probabilities_{config_name}.npy'
         output_file.parent.mkdir(exist_ok=True)
         np.save(output_file, data)
 
 
-def get_quantitative_data(config_name: str, allow_run: bool = True):
-    data_file = ROOT_PATH / 'testing' / f'probabilities_{config_name}.npy'
+def get_quantitative_data_sn7(config_name: str, allow_run: bool = True):
+    dirs = paths.load_paths()
+    data_file = Path(dirs.OUTPUT) / 'testing' / f'probabilities_{config_name}.npy'
     if not data_file.exists():
         if allow_run:
-            run_quantitative_inference(config_name)
+            run_quantitative_inference_sn7(config_name)
         else:
             raise Exception('No data and not allowed to run quantitative inference!')
     # run_quantitative_inference(config_name)
@@ -302,7 +248,44 @@ def get_quantitative_data(config_name: str, allow_run: bool = True):
     return data
 
 
-def plot_boxplots(config_names: list, names: list = None):
+def show_quantitative_testing_sn7(config_name: str):
+    print(f'{"-" * 10} {config_name} {"-" * 10}')
+
+    data = get_quantitative_data_sn7(config_name)
+    for metric in ['f1_score', 'precision', 'recall']:
+        print(metric)
+        region_values = []
+        for region_name, region in data.items():
+
+            y_true = np.concatenate([site['y_true'] for site in region], axis=0)
+            y_prob = np.concatenate([site['y_prob'] for site in region], axis=0)
+
+            if metric == 'f1_score':
+                value = metrics.f1_score_from_prob(y_prob, y_true, 0.5)
+            elif metric == 'precision':
+                value = metrics.precsision_from_prob(y_prob, y_true, 0.5)
+            else:
+                value = metrics.recall_from_prob(y_prob, y_true, 0.5)
+
+            print(f'{region_name}: {value:.3f},', end=' ')
+            region_values.append(value)
+
+        print('')
+        min_ = np.min(region_values)
+        max_ = np.max(region_values)
+        mean = np.mean(region_values)
+        std = np.std(region_values)
+
+        print(f'summary statistics: {min_:.3f} min, {max_:.3f} max, {mean:.3f} mean, {std:.3f} std')
+
+    y_true = np.concatenate([site['y_true'] for region in data.values() for site in region], axis=0)
+    y_prob = np.concatenate([site['y_prob'] for region in data.values() for site in region], axis=0)
+    f1 = metrics.f1_score_from_prob(y_prob, y_true, 0.5)
+    prec = metrics.precsision_from_prob(y_prob, y_true, 0.5)
+    rec = metrics.recall_from_prob(y_prob, y_true, 0.5)
+    print(f'total: {f1:.3f} f1 score, {prec:.3f} precision, {rec:.3f} recall')
+
+def plot_boxplots_sn7(config_names: list, names: list = None):
     mpl.rcParams.update({'font.size': 16})
     metrics = ['f1_score', 'precision', 'recall']
     metric_names = ['F1 score', 'Precision', 'Recall']
@@ -377,7 +360,7 @@ def plot_boxplots(config_names: list, names: list = None):
         plt.close(fig)
 
 
-def plot_activation_comparison(config_names: list, save_plots: bool = False):
+def plot_activation_comparison_sn7(config_names: list, save_plots: bool = False):
     # setup
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     configs = [config.load_cfg(CONFIG_PATH / f'{config_name}.yaml') for config_name in config_names]
@@ -433,7 +416,7 @@ def plot_activation_comparison(config_names: list, save_plots: bool = False):
         plt.close()
 
 
-def plot_activation_comparison_assembled(config_names: list, names: list, aoi_ids: list = None,
+def plot_activation_comparison_assembled_sn7(config_names: list, names: list, aoi_ids: list = None,
                                          save_plot: bool = False):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -508,45 +491,8 @@ def plot_activation_comparison_assembled(config_names: list, names: list, aoi_id
     plt.close()
 
 
-def show_quantitative_testing(config_name: str):
-    print(f'{"-" * 10} {config_name} {"-" * 10}')
 
-    data = get_quantitative_data(config_name)
-    for metric in ['f1_score', 'precision', 'recall']:
-        print(metric)
-        region_values = []
-        for region_name, region in data.items():
-
-            y_true = np.concatenate([site['y_true'] for site in region], axis=0)
-            y_prob = np.concatenate([site['y_prob'] for site in region], axis=0)
-
-            if metric == 'f1_score':
-                value = f1_score_from_prob(y_prob, y_true, 0.5)
-            elif metric == 'precision':
-                value = precsision_from_prob(y_prob, y_true, 0.5)
-            else:
-                value = recall_from_prob(y_prob, y_true, 0.5)
-
-            print(f'{region_name}: {value:.3f},', end=' ')
-            region_values.append(value)
-
-        print('')
-        min_ = np.min(region_values)
-        max_ = np.max(region_values)
-        mean = np.mean(region_values)
-        std = np.std(region_values)
-
-        print(f'summary statistics: {min_:.3f} min, {max_:.3f} max, {mean:.3f} mean, {std:.3f} std')
-
-    y_true = np.concatenate([site['y_true'] for region in data.values() for site in region], axis=0)
-    y_prob = np.concatenate([site['y_prob'] for region in data.values() for site in region], axis=0)
-    f1 = f1_score_from_prob(y_prob, y_true, 0.5)
-    prec = precsision_from_prob(y_prob, y_true, 0.5)
-    rec = recall_from_prob(y_prob, y_true, 0.5)
-    print(f'total: {f1:.3f} f1 score, {prec:.3f} precision, {rec:.3f} recall')
-
-
-def plot_barplots(config_names: list, names: list):
+def plot_barplots_sn7(config_names: list, names: list):
     mpl.rcParams.update({'font.size': 16})
     path = DATASET_PATH.parent / 'testing'
     data = [load_json(path / f'testing_{config_name}.json') for config_name in config_names]
@@ -576,7 +522,7 @@ def plot_barplots(config_names: list, names: list):
         plt.show()
 
 
-def plot_precision_recall_curve(config_names: list, names: list = None, show_legend: bool = False):
+def plot_precision_recall_curve_sn7(config_names: list, names: list = None, show_legend: bool = False):
     fontsize = 18
     mpl.rcParams.update({'font.size': fontsize})
     # TODO: fix me
@@ -612,94 +558,15 @@ def plot_precision_recall_curve(config_names: list, names: list = None, show_leg
         plt.close(fig)
 
 
-def plot_threshold_dependency(config_names: list, names: list = None, show_legend: bool = False):
-    fig, axs = plt.subplots(1, 3, figsize=(15, 5))
-    fontsize = 18
-    mpl.rcParams.update({'font.size': fontsize})
-    # getting data and if not available produce
-    for i, config_name in enumerate(config_names):
-        data = get_quantitative_data(config_name)
-        y_true = np.concatenate([site['y_true'] for region in data.values() for site in region], axis=0)
-        y_prob = np.concatenate([site['y_prob'] for region in data.values() for site in region], axis=0)
-
-        f1_scores, precisions, recalls = [], [], []
-        thresholds = np.linspace(0, 1, 101)
-        for thresh in tqdm(thresholds):
-            f1_scores.append(f1_score_from_prob(y_prob, y_true, thresh))
-            precisions.append(precsision_from_prob(y_prob, y_true, thresh))
-            recalls.append(recall_from_prob(y_prob, y_true, thresh))
-
-        label = config_name if names is None else names[i]
-
-        axs[0].plot(thresholds, f1_scores, label=label)
-        axs[1].plot(thresholds, precisions, label=label)
-        axs[2].plot(thresholds, recalls, label=label)
-
-    for ax, metric in zip(axs, ['F1 score', 'Precision', 'Recall']):
-        ax.set_xlim((0, 1))
-        ax.set_ylim((0, 1))
-        ax.set_xlabel('Threshold', fontsize=fontsize)
-        ax.set_ylabel(metric, fontsize=fontsize)
-        ax.set_aspect('equal', adjustable='box')
-        ticks = np.linspace(0, 1, 6)
-        tick_labels = [f'{tick:.1f}' for tick in ticks]
-        ax.set_xticks(ticks)
-        ax.set_xticklabels(tick_labels, fontsize=fontsize)
-        ax.set_yticks(ticks)
-        ax.set_yticklabels(tick_labels, fontsize=fontsize)
-        if show_legend:
-            ax.legend()
-
-    dataset_ax = axs[-1].twinx()
-    dataset_ax.set_ylabel('Test', fontsize=fontsize, rotation=270, va='bottom')
-    dataset_ax.set_yticks([])
-
-    plot_file = ROOT_PATH / 'plots' / 'f1_curve' / f'sn7_{"".join(config_names)}.png'
-    plot_file.parent.mkdir(exist_ok=True)
-    plt.savefig(plot_file, dpi=300, bbox_inches='tight')
-    plt.show()
-    plt.close(fig)
-
-
-def plot_activation_histograms(config_names: str):
-    plot_size = 2
-    n_cols = len(config_names)
-    n_rows = len(GROUP_NAMES)
-    fig, axs = plt.subplots(n_rows, n_cols, sharex=True, sharey=True, figsize=(plot_size * n_cols, plot_size * n_rows))
-    for j, config_name in enumerate(config_names):
-        data_file = ROOT_PATH / 'testing' / f'probabilities_{config_name}.npy'
-        if not data_file.exists():
-            run_quantitative_inference(config_name)
-        data = np.load(data_file, allow_pickle=True)
-        data = data[()]
-
-        for i, group_name in enumerate(GROUP_NAMES):
-            group_data = data[group_name]
-            probs = group_data['y_probs']
-
-            bin_edges = np.linspace(0, 1, 21)
-            ax = axs[i, j]
-            ax.hist(probs, weights=np.zeros_like(probs) + 1. / probs.size, bins=bin_edges, range=(0, 1))
-            ax.set_xlim((0, 1))
-            ax.set_xticks(np.linspace(0, 1, 5))
-            # ax.set_yscale('log')
-            # ax.axvline(x=thresh, color='k')
-            ax.set_ylim((0, 0.1))
-            # ax.set_aspect('equal', adjustable='box')
-    plt.show()
-    plt.close(fig)
 
 
 if __name__ == '__main__':
 
-    config_name = 'fusiondual_semisupervised_extended'
+    config_name = 'sar_jaccardmorelikeloss'
     config_names = ['sar_jaccardmorelikeloss', 'optical_jaccardmorelikeloss', 'fusion_jaccardmorelikeloss',
                     'fusionda_cons05_jaccardmorelikeloss']
     names = ['SAR', 'Optical', 'Fusion', 'Fusion-DA']
-    # plot_activation_comparison(config_names, save_plots=True)
-    for config_name in config_names:
-        # show_quantitative_testing(config_name)
-        pass
+
 
     aoi_ids = [
         'L15-0357E-1223N_1429_3296_13',  # na
@@ -712,9 +579,34 @@ if __name__ == '__main__':
         'L15-1439E-1134N_5759_3655_13',  # as
         'L15-1716E-1211N_6864_3345_13',  # as
     ]
+
+    show_quantitative_testing_sn7(config_name)
+
+    # plot_activation_comparison(config_names, save_plots=True)
     # plot_activation_comparison_assembled(config_names, names, aoi_ids, save_plot=True)
     # plot_activation_comparison(config_names, save_plots=True)
     # plot_precision_recall_curve(config_names, names)
     # plot_threshold_dependency(config_names, names)
-    # plot_activation_histograms(config_names)
-    plot_boxplots(config_names, names)
+
+    plot_boxplots_sn7(config_names, names)
+
+    config_name = 'sar'
+    all_cities = ['calgary', 'newyork', 'sanfrancisco', 'vancouver', 'beijing', 'dakar', 'dubai', 'jakarta', 'kairo',
+                  'kigali', 'lagos', 'mexicocity', 'mumbai', 'riodejanairo', 'shanghai', 'buenosaires', 'bogota',
+                  'sanjose', 'santiagodechile', 'kapstadt', 'tripoli', 'freetown', 'london', 'madrid', 'kinshasa',
+                  'manila', 'moscow', 'newdehli', 'nursultan', 'perth', 'tokio', 'stockholm', 'sidney', 'maputo',
+                  'caracas', 'santacruzdelasierra', 'saopaulo', 'asuncion', 'lima', 'paramaribo', 'libreville',
+                  'djibuti', 'beirut', 'baghdad', 'athens', 'islamabad', 'hanoi', 'bangkok', 'dhaka', 'bengaluru',
+                  'taipeh', 'berlin', 'nanning', 'wuhan', 'daressalam', 'milano', 'zhengzhou', 'hefei', 'xian',
+                  'seoul', 'ibadan', 'benincity', 'abidjan', 'accra', 'amsterdam', 'riyadh', 'amman', 'damascus',
+                  'nouakchott', 'prague', 'sanaa', 'dahmar', 'kuwaitcity', 'tindouf', 'tehran']
+
+    for i, city in enumerate(all_cities):
+        legend = True if city == 'stockholm' else False
+        produce_label(config_name, city)
+        run_inference(config_name, city)
+        run_quantitative_evaluation(config_name, city, threshold=0.5, save_output=True)
+
+        plot_precision_recall_curve(city, ['igarss_sar', 'igarss_optical', 'igarss_fusion', 'ghsl'],
+                                    names=['SAR', 'Optical', 'Fusion', 'GHS-S2'], show_legend=True,
+                                    save_plot=True)

@@ -15,7 +15,6 @@ from utils import networks, datasets, loss_functions, evaluation, experiment_man
 
 
 def run_training(cfg):
-
     run_config = {
         'CONFIG_NAME': cfg.NAME,
         'device': device,
@@ -147,7 +146,6 @@ if __name__ == '__main__':
     torch.backends.cudnn.benchmark = False
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # cudnn.benchmark = True # faster convolutions, but more memory
 
     print('=== Runnning on device: p', device)
 

@@ -51,6 +51,7 @@ class AbstractUrbanExtractionDataset(torch.utils.data.Dataset):
         label = self.cfg.DATALOADER.LABEL
         label_file = self.root_path / site / label / f'{label}_{site}_{patch_id}.tif'
         img, transform, crs = geofiles.read_tif(label_file)
+        img = img > 0
         return np.nan_to_num(img).astype(np.float32), transform, crs
 
     @staticmethod
@@ -263,125 +264,22 @@ class SpaceNet7Dataset(AbstractSpaceNet7Dataset):
         return item
 
 
-
-# dataset for classifying a scene
-class SceneInferenceDataset(torch.utils.data.Dataset):
-
-    def __init__(self, cfg, s1_file: Path = None, s2_file: Path = None, patch_size: int = 256,
-                 s1_bands: list = None, s2_bands: list = None):
-        super().__init__()
-
-        self.cfg = cfg
-        self.s1_file = s1_file
-        self.s2_file = s2_file
-        assert(s1_file.exists() and s2_file.exists())
-
-        self.transform = transforms.Compose([Numpy2Torch()])
-
-        ref_file = s1_file if s1_file is not None else s2_file
-        arr, self.geotransform, self.crs = read_tif(ref_file)
-        self.height, self.width, _ = arr.shape
-
-        self.patch_size = patch_size
-        self.rf = 128
-        self.n_rows = (self.height - self.rf) // patch_size
-        self.n_cols = (self.width - self.rf) // patch_size
-        self.length = self.n_rows * self.n_cols
-
-        # creating boolean feature vector to subset sentinel 1 and sentinel 2 bands
-        if s1_bands is None:
-            s1_bands = ['VV_mean', 'VV_stdDev', 'VH_mean', 'VH_stdDev']
-        selected_features_sentinel1 = cfg.DATALOADER.SENTINEL1_BANDS
-        self.s1_feature_selection = self._get_feature_selection(s1_bands, selected_features_sentinel1)
-        if s2_bands is None:
-            s2_bands = ['B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B11', 'B12']
-        selected_features_sentinel2 = cfg.DATALOADER.SENTINEL2_BANDS
-        self.s2_feature_selection = self._get_feature_selection(s2_bands, selected_features_sentinel2)
-
-        # loading image
-        mode = self.cfg.DATALOADER.MODE
-        if mode == 'optical':
-            img, _, _ = read_tif(self.s2_file)
-            img = img[:, :, self.s2_feature_selection]
-        elif mode == 'sar':
-            img, _, _ = read_tif(self.s1_file)
-            img = img[:, :, self.s1_feature_selection]
-        else:  # fusion
-            s1_img, _, _ = read_tif(self.s1_file)
-            s1_img = s1_img[:, :, self.s1_feature_selection]
-            s2_img, _, _ = read_tif(self.s2_file)
-            s2_img = s2_img[:, :, self.s2_feature_selection]
-            img = np.concatenate([s1_img, s2_img], axis=-1)
-        self.img = img
-
-    def __getitem__(self, index):
-
-        i_start = index // self.n_cols * self.patch_size
-        j_start = index % self.n_cols * self.patch_size
-        # check for border cases and add padding accordingly
-        # top left corner
-        if i_start == 0 and j_start == 0:
-            i_end = self.patch_size + 2 * self.rf
-            j_end = self.patch_size + 2 * self.rf
-        # top
-        elif i_start == 0:
-            i_end = self.patch_size + 2 * self.rf
-            j_end = j_start + self.patch_size + self.rf
-            j_start -= self.rf
-        elif j_start == 0:
-            j_end = self.patch_size + 2 * self.rf
-            i_end = i_start + self.patch_size + self.rf
-            i_start -= self.rf
-        else:
-            i_end = i_start + self.patch_size + self.rf
-            i_start -= self.rf
-            j_end = j_start + self.patch_size + self.rf
-            j_start -= self.rf
-
-        img = self._get_sentinel_data(i_start, i_end, j_start, j_end)
-        img, _ = self.transform((img, np.empty((1, 1, 1))))
-        patch = {
-            'x': img,
-            'row': (i_start, i_end),
-            'col': (j_start, j_end)
-        }
-
-        return patch
-
-    def _get_sentinel_data(self, i_start: int, i_end: int, j_start: int, j_end: int):
-        img_patch = self.img[i_start:i_end, j_start:j_end, ]
-        return np.nan_to_num(img_patch).astype(np.float32)
-
-    @ staticmethod
-    def _get_feature_selection(features, selection):
-        feature_selection = [False for _ in range(len(features))]
-        for feature in selection:
-            i = features.index(feature)
-            feature_selection[i] = True
-        return feature_selection
-
-    def get_mask(self, data_type = 'uint8') -> np.ndarray:
-        mask = np.empty(shape=(self.n_rows * self.patch_size, self.n_cols * self.patch_size, 1), dtype=data_type)
-        return mask
-
-    def __len__(self):
-        return self.length
-
-
 # dataset for classifying a scene
 class TilesInferenceDataset(torch.utils.data.Dataset):
 
-    def __init__(self, cfg, site: str, root_dir: Path = None):
+    def __init__(self, cfg, site: str):
         super().__init__()
 
         self.cfg = cfg
         self.site = site
-        self.root_dir = Path(cfg.DATASETS.PATH) if root_dir is None else root_dir
-        self.transform = transforms.Compose([Numpy2Torch()])
+
+        dirs = paths.load_paths()
+        self.root_dir = Path(dirs.DATASET)
+        self.transform = transforms.Compose([augmentations.Numpy2Torch()])
 
         # getting all files
         samples_file = self.root_dir / site / 'samples.json'
-        metadata = load_json(samples_file)
+        metadata = geofiles.load_json(samples_file)
         self.samples = metadata['samples']
         self.length = len(self.samples)
 
@@ -467,13 +365,13 @@ class TilesInferenceDataset(torch.utils.data.Dataset):
 
     def _get_sentinel1_data(self, patch_id):
         file = self.root_dir / self.site / 'sentinel1' / f'sentinel1_{self.site}_{patch_id}.tif'
-        img, transform, crs = read_tif(file)
+        img, transform, crs = geofiles.read_tif(file)
         img = img[:, :, self.s1_indices]
         return np.nan_to_num(img).astype(np.float32), transform, crs
 
     def _get_sentinel2_data(self, patch_id):
         file = self.root_dir / self.site / 'sentinel2' / f'sentinel2_{self.site}_{patch_id}.tif'
-        img, transform, crs = read_tif(file)
+        img, transform, crs = geofiles.read_tif(file)
         img = img[:, :, self.s2_indices]
         return np.nan_to_num(img).astype(np.float32), transform, crs
 
@@ -482,7 +380,7 @@ class TilesInferenceDataset(torch.utils.data.Dataset):
         threshold = self.cfg.DATALOADER.LABEL_THRESH
 
         label_file = self.root_dir / self.site / label / f'{label}_{self.site}_{patch_id}.tif'
-        img, transform, crs = read_tif(label_file)
+        img, transform, crs = geofiles.read_tif(label_file)
         if threshold >= 0:
             img = img > threshold
 

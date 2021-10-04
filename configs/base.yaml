@@ -9,18 +9,26 @@ INFERENCE:
     TRAIN: 0.0
     VALIDATION: 0.0
 
+TRAINER:
+  LR: 1e-4
+  BATCH_SIZE: 8
+  EPOCHS: 20
+  OPTIMIZER: 'adamw'
+
+CONSISTENCY_TRAINER:
+  LOSS_FACTOR: 0.1
+  WEIGHT_DECAY: 0.998
+  APPLY_THRESHOLD: False
+  CONSISTENCY_LOSS_TYPE: 'PowerJaccardLoss'
+
 MODEL:
   TYPE: 'unet'
   OUT_CHANNELS: 1
   IN_CHANNELS: 12
-  LOSS_TYPE: 'JaccardLikeLoss'
+  LOSS_TYPE: 'PowerJaccardLoss'
   POSITIVE_WEIGHT: 250
   NEGATIVE_WEIGHT: 1
   TOPOLOGY: [64, 128,]
-  BACKBONE:
-    ENABLED: False
-    TYPE: 'resnet34'
-    PRETRAINED_WEIGHTS: None
 
 DATALOADER:
   NUM_WORKER: 8
@@ -33,6 +41,12 @@ DATALOADER:
   AUXILIARY_INPUTS: []
   INCLUDE_UNLABELED: False
 
+AUGMENTATION:
+  IMAGE_OVERSAMPLING_TYPE: 'none' # [none, simple]
+  RANDOM_FLIP: True
+  RANDOM_ROTATE: True
+  COLOR_SHIFT: False
+  GAMMA_CORRECTION: True
 
 DATASETS:
   PATH: '/storage/shafner/urban_extraction/urban_dataset/'
@@ -49,24 +63,5 @@ DATASETS:
               'bangkok', 'dhaka', 'bengaluru', 'taipeh', 'berlin', 'nanning', 'wuhan', 'daressalam', 'milano']
   TESTING: '/storage/shafner/urban_extraction/urban_dataset/sn7/'
 
-TRAINER:
-  LR: 1e-4
-  BATCH_SIZE: 8
-  EPOCHS: 20
-  OPTIMIZER: 'adamw'
 
-AUGMENTATION:
-  IMAGE_OVERSAMPLING_TYPE: 'none' # [none, simple]
-  RANDOM_FLIP: True
-  RANDOM_ROTATE: True
-  COLOR_SHIFT: False
-  GAMMA_CORRECTION: True
-  DOWNSCALE: []
-  SENSOR_DROPOUT: False
-  CHANNEL_DROPOUT: False
 
-CONSISTENCY_TRAINER:
-  LOSS_FACTOR: 0.1
-  WEIGHT_DECAY: 0.998
-  APPLY_THRESHOLD: False
-  CONSISTENCY_LOSS_TYPE: 'JaccardLikeLoss'

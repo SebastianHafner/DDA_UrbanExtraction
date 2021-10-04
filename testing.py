@@ -1,24 +1,18 @@
 from pathlib import Path
 import numpy as np
-import json
 import torch
 from tqdm import tqdm
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-from utils import metrics, geofiles, visualization, experiment_manager, networks, datasets, paths
+from utils import metrics, geofiles, experiment_manager, networks, datasets, paths, visualization
 from sklearn.metrics import precision_recall_curve
 
 FONTSIZE = 20
 mpl.rcParams.update({'font.size': FONTSIZE})
 
-GROUPS = [(1, 'NA_AU', '#63cd93'), (2, 'SA', '#f0828f'), (3, 'EU', '#6faec9'), (4, 'SSA', '#5f4ad9'),
-          (5, 'NAF_ME', '#8dee47'), (6, 'AS', '#d9b657'), ('total', 'Total', '#ffffff')]
-GROUP_NAMES = ['NA_AU', 'SA', 'EU', 'SSA', 'NAF_ME', 'AS']
-COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
 
-
-def run_inference(config_name: str, site: str, root_path: Path = None):
+def run_inference(config_name: str, site: str):
     print(f'running inference for {site} with {config_name}...')
 
     dirs = paths.load_paths()
@@ -31,11 +25,7 @@ def run_inference(config_name: str, site: str, root_path: Path = None):
     net.eval()
 
     # loading dataset from config (requires inference.json)
-    dataset = datasets.TilesInferenceDataset(cfg, site, root_path)
-
-    # config inference directory
-    inference_dir = Path(dirs.OUTPUT) / 'inference'
-    inference_dir.mkdir(exist_ok=True)
+    dataset = datasets.TilesInferenceDataset(cfg, site)
 
     prob_output = dataset.get_arr()
     transform, crs = dataset.get_geo()
@@ -56,21 +46,20 @@ def run_inference(config_name: str, site: str, root_path: Path = None):
             j_end = j_start + dataset.patch_size
             prob_output[i_start:i_end, j_start:j_end, 0] = center_prob
 
-    output_file = inference_dir / config_name / f'prob_{site}_{config_name}.tif'
+    # config inference directory
+    output_file = Path(dirs.OUTPUT) / 'inference' / config_name / f'prob_{site}_{config_name}.tif'
     output_file.parent.mdkir(exist_ok=True)
     geofiles.write_tif(output_file, prob_output, transform, crs)
 
 
-def produce_label(config_name: str,site: str, root_path=None):
+def produce_label(config_name: str, site: str):
     print(f'producing label for {site} with {config_name}...')
+
+    dirs = paths.load_paths()
 
     # loading config and dataset
     cfg = experiment_manager.load_cfg(config_name)
-    dataset = datasets.TilesInferenceDataset(cfg, site, root_path)
-
-    # config inference directory
-    save_path = ROOT_PATH / 'inference' / config_name
-    save_path.mkdir(exist_ok=True)
+    dataset = datasets.TilesInferenceDataset(cfg, site)
 
     label_output = dataset.get_arr()
     transform, crs = dataset.get_geo()
@@ -86,19 +75,22 @@ def produce_label(config_name: str,site: str, root_path=None):
         j_end = j_start + dataset.patch_size
         label_output[i_start:i_end, j_start:j_end, 0] = label
 
+    save_path = Path(dirs.OUTPUT) / 'inference' / config_name
+    save_path.mkdir(exist_ok=True)
     output_file = save_path / f'label_{site}_{config_name}.tif'
-    write_tif(output_file, label_output, transform, crs)
+    geofiles.write_tif(output_file, label_output, transform, crs)
 
 
 def run_quantitative_evaluation(config_name: str, site: str, threshold: float = None, save_output: bool = False):
     print(f'running quantitative evaluation for {site} with {config_name}...')
 
-    # loading config and network
-    cfg = config.load_cfg(Path.cwd() / 'configs' / f'{config_name}.yaml')
-    net_file = Path(cfg.OUTPUT_BASE_DIR) / f'{config_name}_{cfg.INFERENCE.CHECKPOINT}.pkl'
-    net = networks.load_network(cfg)
+    dirs = paths.load_paths()
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    net.to(device)
+
+    # loading config and network
+    cfg = experiment_manager.load_cfg(config_name)
+    net, _, _ = networks.load_checkpoint(cfg.INFERENCE.CHECKPOINT, cfg, device)
     net.eval()
 
     # loading dataset from config (requires inference.json)
@@ -132,7 +124,7 @@ def run_quantitative_evaluation(config_name: str, site: str, threshold: float = 
             y_probs = y_probs.numpy()
             y_trues = y_trues.numpy()
             output_data = np.stack((y_trues, y_probs))
-            output_path = ROOT_PATH / 'quantitative_evaluation' / config_name
+            output_path = Path(dirs.OUTPUT) / 'quantitative_evaluation' / config_name
             output_path.mkdir(exist_ok=True)
             output_file = output_path / f'{site}_{config_name}.npy'
             np.save(output_file, output_data)
@@ -146,45 +138,46 @@ def run_quantitative_evaluation(config_name: str, site: str, threshold: float = 
 
 def plot_precision_recall_curve(site: str, config_names: list, names: list = None, show_legend: bool = False,
                                 save_plot: bool = False):
+
+    dirs = paths.load_paths()
+
     fig, ax = plt.subplots()
 
     # getting data and if not available produce
     for i, config_name in enumerate(config_names):
-        data_file_config = ROOT_PATH / 'quantitative_evaluation' / config_name / f'{site}_{config_name}.npy'
+        data_file_config = Path(dirs.OUTPUT) / 'quantitative_evaluation' / config_name / f'{site}_{config_name}.npy'
         if not data_file_config.exists():
             run_quantitative_evaluation(config_name, site, save_output=True)
         data_config = np.load(data_file_config)
         prec, rec, thresholds = precision_recall_curve(data_config[0,], data_config[1,])
-
         label = config_name if names is None else names[i]
         ax.plot(rec, prec, label=label)
         ax.set_xlim((0, 1))
         ax.set_ylim((0, 1))
-        ax.set_xlabel('Recall', fontsize=fontsize)
-        ax.set_ylabel('Precision', fontsize=fontsize)
+        ax.set_xlabel('Recall', fontsize=FONTSIZE)
+        ax.set_ylabel('Precision', fontsize=FONTSIZE)
         ax.set_aspect('equal', adjustable='box')
         ticks = np.linspace(0, 1, 6)
         tick_labels = [f'{tick:.1f}' for tick in ticks]
         ax.set_xticks(ticks)
-        ax.set_xticklabels(tick_labels, fontsize=fontsize)
+        ax.set_xticklabels(tick_labels, fontsize=FONTSIZE)
         ax.set_yticks(ticks)
-        ax.set_yticklabels(tick_labels, fontsize=fontsize)
+        ax.set_yticklabels(tick_labels, fontsize=FONTSIZE)
         if show_legend:
             ax.legend()
     if save_plot:
-        plot_file = ROOT_PATH / 'plots' / 'precision_recall_curve' / f'{site}_{"".join(config_names)}.png'
+        plot_file = Path(dirs.OUTPUT) / 'plots' / 'precision_recall_curve' / f'{site}_{"".join(config_names)}.png'
+        plot_file.parent.mkdir(exist_ok=True)
         plt.savefig(plot_file, dpi=300, bbox_inches='tight')
     plt.show()
     plt.close(fig)
 
-
-
-
-
-
-
-
 # SpaceNet7 testing
+
+GROUPS = [(1, 'NA_AU', '#63cd93'), (2, 'SA', '#f0828f'), (3, 'EU', '#6faec9'), (4, 'SSA', '#5f4ad9'),
+          (5, 'NAF_ME', '#8dee47'), (6, 'AS', '#d9b657'), ('total', 'Total', '#ffffff')]
+GROUP_NAMES = ['NA_AU', 'SA', 'EU', 'SSA', 'NAF_ME', 'AS']
+COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
 
 
 def run_quantitative_inference_sn7(config_name: str):
@@ -285,6 +278,7 @@ def show_quantitative_testing_sn7(config_name: str):
     rec = metrics.recall_from_prob(y_prob, y_true, 0.5)
     print(f'total: {f1:.3f} f1 score, {prec:.3f} precision, {rec:.3f} recall')
 
+
 def plot_boxplots_sn7(config_names: list, names: list = None):
     mpl.rcParams.update({'font.size': 16})
     metrics = ['f1_score', 'precision', 'recall']
@@ -328,20 +322,12 @@ def plot_boxplots_sn7(config_names: list, names: list = None):
 
         for i, config_name in enumerate(config_names):
 
-            # x data
-            # positions = np.arange(len(GROUP_NAMES)) + (i * box_width)
-
-            # y data
-            data = get_quantitative_data(config_name)
-            # boxplot_data = [[site[metric] for site in data[group_name]] for group_name in GROUP_NAMES]
+            data = get_quantitative_data_sn7(config_name)
 
             for j, group_name in enumerate(GROUP_NAMES):
                 values = [site[metric] for site in data[group_name]]
                 x_pos = j + (i * box_width) + j * 0.1
                 custom_boxplot(x_pos, values, color=COLORS[i], annotation=metric_chars[m])
-
-            # ax.boxplot(boxplot_data, positions=positions, widths=box_width, zorder=3, whis=[0, 100], sym='', notch=False,
-            #            showbox=False, conf_intervals=conf_intervals)
 
         ax.set_ylim((0, 1))
         ax.set_ylabel(metric_name)
@@ -350,7 +336,6 @@ def plot_boxplots_sn7(config_names: list, names: list = None):
         x_ticks = [x_tick + i * 0.1 for i, x_tick in enumerate(x_ticks)]
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(GROUP_NAMES)
-        # plt.grid(b=True, which='major', axis='y', zorder=0)
 
         if metric == 'f1_score':
             handles = [Line2D([0], [0], color=COLORS[i], lw=line_width) for i in range(len(config_names))]
@@ -361,19 +346,22 @@ def plot_boxplots_sn7(config_names: list, names: list = None):
 
 
 def plot_activation_comparison_sn7(config_names: list, save_plots: bool = False):
+
+    dirs = paths.load_paths()
+
     # setup
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    configs = [config.load_cfg(CONFIG_PATH / f'{config_name}.yaml') for config_name in config_names]
-    datasets = [SpaceNet7Dataset(cfg) for cfg in configs]
+    configs = [experiment_manager.load_cfg(config_name) for config_name in config_names]
+    dataset_collection = [datasets.SpaceNet7Dataset(cfg) for cfg in configs]
 
     # optical, sar, reference and predictions (n configs)
     n_plots = 3 + len(config_names)
 
-    for index in range(len(datasets[0])):
+    for index in range(len(dataset_collection[0])):
         fig, axs = plt.subplots(1, n_plots, figsize=(n_plots * 3, 4))
-        for i, (cfg, dataset) in enumerate(zip(configs, datasets)):
+        for i, (cfg, dataset) in enumerate(zip(configs, dataset_collection)):
 
-            net, _, _ = load_checkpoint(cfg.INFERENCE.CHECKPOINT, cfg, device)
+            net, _, _ = networks.load_checkpoint(cfg.INFERENCE.CHECKPOINT, cfg, device)
             net.eval()
 
             sample = dataset.__getitem__(index)
@@ -385,29 +373,28 @@ def plot_activation_comparison_sn7(config_names: list, save_plots: bool = False)
                 fig.subplots_adjust(wspace=0, hspace=0)
                 mpl.rcParams['axes.linewidth'] = 1
 
-                optical_file = DATASET_PATH / 'sn7' / 'sentinel2' / f'sentinel2_{aoi_id}.tif'
-                plot_optical(axs[0], optical_file, vis='true_color', show_title=False)
+                optical_file = Path(dirs.DATASET) / 'sn7' / 'sentinel2' / f'sentinel2_{aoi_id}.tif'
+                visualization.plot_optical(axs[0], optical_file, vis='true_color', show_title=False)
 
-                sar_file = DATASET_PATH / 'sn7' / 'sentinel1' / f'sentinel1_{aoi_id}.tif'
-                plot_sar(axs[1], sar_file, show_title=False)
+                sar_file = Path(dirs.DATASET) / 'sn7' / 'sentinel1' / f'sentinel1_{aoi_id}.tif'
+                visualization.plot_sar(axs[1], sar_file, show_title=False)
 
                 label = cfg.DATALOADER.LABEL
-                label_file = DATASET_PATH / 'sn7' / label / f'{label}_{aoi_id}.tif'
-                plot_buildings(axs[2], label_file, show_title=False)
+                label_file = Path(dirs.DATASET) / 'sn7' / label / f'{label}_{aoi_id}.tif'
+                visualization.plot_buildings(axs[2], label_file, show_title=False)
 
             with torch.no_grad():
                 x = sample['x'].to(device)
                 logits = net(x.unsqueeze(0))
                 prob = torch.sigmoid(logits[0, 0,])
                 prob = prob.detach().cpu().numpy()
-                plot_probability(axs[3 + i], prob)
+                visualization.plot_probability(axs[3 + i], prob)
 
         title = f'{country} ({group_name})'
 
-        # plt.suptitle(title, ha='left', va='center', x=0, y=0.5, fontsize=10, rotation=90)
         axs[0].set_ylabel(title, fontsize=16)
         if save_plots:
-            folder = URBAN_EXTRACTION_PATH / 'plots' / 'testing' / 'qualitative' / '_'.join(config_names)
+            folder =  Path(dirs.OUTPUT) / 'plots' / 'testing' / f'qualitative ' + '_'.join(config_names)
             folder.mkdir(exist_ok=True)
             file = folder / f'{aoi_id}.png'
             plt.savefig(file, dpi=300, bbox_inches='tight')
@@ -418,10 +405,12 @@ def plot_activation_comparison_sn7(config_names: list, save_plots: bool = False)
 
 def plot_activation_comparison_assembled_sn7(config_names: list, names: list, aoi_ids: list = None,
                                          save_plot: bool = False):
+
+    dirs = paths.load_paths()
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     mpl.rcParams['axes.linewidth'] = 1
-    fontsize = 18
 
     # setting up plot
     plot_size = 3
@@ -435,9 +424,9 @@ def plot_activation_comparison_assembled_sn7(config_names: list, names: list, ao
     for i, config_name in enumerate(config_names):
 
         # loading configs, datasets, and networks
-        cfg = config.load_cfg(CONFIG_PATH / f'{config_name}.yaml')
-        dataset = SpaceNet7Dataset(cfg)
-        net, _, _ = load_checkpoint(cfg.INFERENCE.CHECKPOINT, cfg, device)
+        cfg = experiment_manager.load_cfg(config_name)
+        dataset = datasets.SpaceNet7Dataset(cfg)
+        net, _, _ = networks.load_checkpoint(cfg.INFERENCE.CHECKPOINT, cfg, device)
         net.eval()
 
         for j, aoi_id in enumerate(aoi_ids):
@@ -452,18 +441,18 @@ def plot_activation_comparison_assembled_sn7(config_names: list, names: list, ao
                 country = 'Saudi Ar.'
             group_name = sample['group_name']
 
-            optical_file = DATASET_PATH / 'sn7' / 'sentinel2' / f'sentinel2_{aoi_id}.tif'
-            plot_optical(axs[j, 0], optical_file, vis='true_color', show_title=False)
-            axs[-1, 0].set_xlabel('(a) Image Optical', fontsize=fontsize)
+            optical_file = Path(dirs.DATASET) / 'sn7' / 'sentinel2' / f'sentinel2_{aoi_id}.tif'
+            visualization.plot_optical(axs[j, 0], optical_file, vis='true_color', show_title=False)
+            axs[-1, 0].set_xlabel('(a) Image Optical', fontsize=FONTSIZE)
 
-            sar_file = DATASET_PATH / 'sn7' / 'sentinel1' / f'sentinel1_{aoi_id}.tif'
-            plot_sar(axs[j, 1], sar_file, show_title=False)
-            axs[-1, 1].set_xlabel('(b) Image SAR', fontsize=fontsize)
+            sar_file = Path(dirs.DATASET) / 'sn7' / 'sentinel1' / f'sentinel1_{aoi_id}.tif'
+            visualization.plot_sar(axs[j, 1], sar_file, show_title=False)
+            axs[-1, 1].set_xlabel('(b) Image SAR', fontsize=FONTSIZE)
 
             label = cfg.DATALOADER.LABEL
-            label_file = DATASET_PATH / 'sn7' / label / f'{label}_{aoi_id}.tif'
-            plot_buildings(axs[j, 2], label_file, show_title=False)
-            axs[-1, 2].set_xlabel('(c) Ground Truth', fontsize=fontsize)
+            label_file = Path(dirs.DATASET) / 'sn7' / label / f'{label}_{aoi_id}.tif'
+            visualization.plot_buildings(axs[j, 2], label_file, show_title=False)
+            axs[-1, 2].set_xlabel('(c) Ground Truth', fontsize=FONTSIZE)
 
             with torch.no_grad():
                 x = sample['x'].to(device)
@@ -471,68 +460,37 @@ def plot_activation_comparison_assembled_sn7(config_names: list, names: list, ao
                 prob = torch.sigmoid(logits.squeeze())
                 prob = prob.cpu().numpy()
                 ax = axs[j, 3 + i]
-                plot_probability(ax, prob)
+                visualization.plot_probability(ax, prob)
 
             if i == 0:  # row labels only need to be set once
                 row_label = f'{country} ({group_name})'
-                axs[j, 0].set_ylabel(row_label, fontsize=fontsize)
+                axs[j, 0].set_ylabel(row_label, fontsize=FONTSIZE)
 
             col_letter = chr(ord('a') + 3 + i)
             col_label = f'({col_letter}) {names[i]}'
-            axs[-1, 3 + i].set_xlabel(col_label, fontsize=fontsize)
+            axs[-1, 3 + i].set_xlabel(col_label, fontsize=FONTSIZE)
 
     if save_plot:
-        folder = URBAN_EXTRACTION_PATH / 'plots' / 'testing' / 'qualitative' / 'assembled'
+        folder = Path(dirs.OUTPUT) / 'plots' / 'testing' / 'qualitative'
         folder.mkdir(exist_ok=True)
-        file = folder / f'test_qualitative_results.png'
+        file = folder / f'qualitative_results_assembled.png'
         plt.savefig(file, dpi=300, bbox_inches='tight')
     else:
         plt.show()
     plt.close()
 
 
+def plot_precision_recall_curve_sn7(config_names: list, names: list = None, show_legend: bool = False,
+                                    save_plot: bool = False):
 
-def plot_barplots_sn7(config_names: list, names: list):
-    mpl.rcParams.update({'font.size': 16})
-    path = DATASET_PATH.parent / 'testing'
-    data = [load_json(path / f'testing_{config_name}.json') for config_name in config_names]
-
-    metrics = ['f1_score', 'precision', 'recall']
-    metric_names = ['F1 score', 'Precision', 'Recall']
-    groups = data[0]['groups'][:-1]
-    group_names = [group[1] for group in groups]
-
-    for i, metric in enumerate(metrics):
-        fig, ax = plt.subplots(figsize=(10, 5))
-        width = 0.2
-        for j, experiment in enumerate(data):
-            ind = np.arange(len(groups))
-            y_pos = [experiment['data'][str(group[0])][metric] for group in groups]
-            x_pos = ind + (j * width)
-            ax.bar(x_pos, y_pos, width, label=names[j], zorder=3, edgecolor='black')
-
-        ax.set_ylim((0, 1))
-        ax.set_ylabel(metric_names[i])
-        if i == 0:
-            ax.legend(loc='upper center', ncol=4, frameon=False, handletextpad=0.8, columnspacing=1, handlelength=1)
-        x_ticks = ind + (len(config_names) - 1) * width / 2
-        ax.set_xticks(x_ticks)
-        ax.set_xticklabels(group_names)
-        plt.grid(b=True, which='major', axis='y', zorder=0)
-        plt.show()
-
-
-def plot_precision_recall_curve_sn7(config_names: list, names: list = None, show_legend: bool = False):
-    fontsize = 18
-    mpl.rcParams.update({'font.size': fontsize})
-    # TODO: fix me
+    dirs = paths.load_paths()
 
     # getting data and if not available produce
     for i, region_name in enumerate(GROUP_NAMES):
         fig, ax = plt.subplots()
         for i, config_name in enumerate(config_names):
-            data = get_quantitative_data(config_name)
-            y_true = np.concatenate([site['y_true'] for site in data[region_name]], axis=0)
+            data = get_quantitative_data_sn7(config_name)
+            y_true = np.concatenate([site['y_true'] for site in data[region_name]], axis=0).astype(np.int)
             y_prob = np.concatenate([site['y_prob'] for site in data[region_name]], axis=0)
             prec, rec, thresholds = precision_recall_curve(y_true, y_prob)
             label = config_name if names is None else names[i]
@@ -540,33 +498,34 @@ def plot_precision_recall_curve_sn7(config_names: list, names: list = None, show
 
         ax.set_xlim((0, 1))
         ax.set_ylim((0, 1))
-        ax.set_xlabel('Recall', fontsize=fontsize)
-        ax.set_ylabel('Precision', fontsize=fontsize)
+        ax.set_xlabel('Recall', fontsize=FONTSIZE)
+        ax.set_ylabel('Precision', fontsize=FONTSIZE)
         ax.set_aspect('equal', adjustable='box')
         ticks = np.linspace(0, 1, 6)
         tick_labels = [f'{tick:.1f}' for tick in ticks]
         ax.set_xticks(ticks)
-        ax.set_xticklabels(tick_labels, fontsize=fontsize)
+        ax.set_xticklabels(tick_labels, fontsize=FONTSIZE)
         ax.set_yticks(ticks)
-        ax.set_yticklabels(tick_labels, fontsize=fontsize)
+        ax.set_yticklabels(tick_labels, fontsize=FONTSIZE)
         if show_legend:
             ax.legend()
 
-        plot_file = ROOT_PATH / 'plots' / 'precision_recall_curve' / f'{region_name}_{"".join(config_names)}.png'
-        plt.savefig(plot_file, dpi=300, bbox_inches='tight')
-        plt.show()
+        if save_plot:
+            plot_file = Path(dirs.OUTPUT) / 'plots' / 'precision_recall_curve' / f'{region_name}_{"".join(config_names)}.png'
+            plot_file.parent.mkdir(exist_ok=True)
+            plt.savefig(plot_file, dpi=300, bbox_inches='tight')
+        else:
+            plt.show()
         plt.close(fig)
-
-
 
 
 if __name__ == '__main__':
 
-    config_name = 'sar_jaccardmorelikeloss'
-    config_names = ['sar_jaccardmorelikeloss', 'optical_jaccardmorelikeloss', 'fusion_jaccardmorelikeloss',
-                    'fusionda_cons05_jaccardmorelikeloss']
-    names = ['SAR', 'Optical', 'Fusion', 'Fusion-DA']
+    config_name = 'sar'
+    city = 'calgary'
 
+    config_names = ['sar', 'optical']
+    names = ['SAR', 'Optical']
 
     aoi_ids = [
         'L15-0357E-1223N_1429_3296_13',  # na
@@ -580,33 +539,20 @@ if __name__ == '__main__':
         'L15-1716E-1211N_6864_3345_13',  # as
     ]
 
-    show_quantitative_testing_sn7(config_name)
+    # produce_label(config_name, city)
+    # run_inference(config_name, city)
 
-    # plot_activation_comparison(config_names, save_plots=True)
-    # plot_activation_comparison_assembled(config_names, names, aoi_ids, save_plot=True)
-    # plot_activation_comparison(config_names, save_plots=True)
-    # plot_precision_recall_curve(config_names, names)
+
+    # SpaceNet7 stuff
+
+    # run_quantitative_inference_sn7(config_name)
+    # show_quantitative_testing_sn7(config_name)
+    # plot_boxplots_sn7(config_names, names)
+
+    # plot_activation_comparison_sn7(config_names, save_plots=False)
+    # plot_activation_comparison_assembled_sn7(config_names, names, aoi_ids, save_plot=False)
+
+    plot_precision_recall_curve_sn7(config_names, names, save_plot=False)
     # plot_threshold_dependency(config_names, names)
 
-    plot_boxplots_sn7(config_names, names)
 
-    config_name = 'sar'
-    all_cities = ['calgary', 'newyork', 'sanfrancisco', 'vancouver', 'beijing', 'dakar', 'dubai', 'jakarta', 'kairo',
-                  'kigali', 'lagos', 'mexicocity', 'mumbai', 'riodejanairo', 'shanghai', 'buenosaires', 'bogota',
-                  'sanjose', 'santiagodechile', 'kapstadt', 'tripoli', 'freetown', 'london', 'madrid', 'kinshasa',
-                  'manila', 'moscow', 'newdehli', 'nursultan', 'perth', 'tokio', 'stockholm', 'sidney', 'maputo',
-                  'caracas', 'santacruzdelasierra', 'saopaulo', 'asuncion', 'lima', 'paramaribo', 'libreville',
-                  'djibuti', 'beirut', 'baghdad', 'athens', 'islamabad', 'hanoi', 'bangkok', 'dhaka', 'bengaluru',
-                  'taipeh', 'berlin', 'nanning', 'wuhan', 'daressalam', 'milano', 'zhengzhou', 'hefei', 'xian',
-                  'seoul', 'ibadan', 'benincity', 'abidjan', 'accra', 'amsterdam', 'riyadh', 'amman', 'damascus',
-                  'nouakchott', 'prague', 'sanaa', 'dahmar', 'kuwaitcity', 'tindouf', 'tehran']
-
-    for i, city in enumerate(all_cities):
-        legend = True if city == 'stockholm' else False
-        produce_label(config_name, city)
-        run_inference(config_name, city)
-        run_quantitative_evaluation(config_name, city, threshold=0.5, save_output=True)
-
-        plot_precision_recall_curve(city, ['igarss_sar', 'igarss_optical', 'igarss_fusion', 'ghsl'],
-                                    names=['SAR', 'Optical', 'Fusion', 'GHS-S2'], show_legend=True,
-                                    save_plot=True)

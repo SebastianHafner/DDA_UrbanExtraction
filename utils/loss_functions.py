@@ -18,22 +18,14 @@ def get_criterion(loss_type, negative_weight: float = 1, positive_weight: float 
         criterion = soft_dice_squared_sum_loss
     elif loss_type == 'SoftDiceBalancedLoss':
         criterion = soft_dice_loss_balanced
-    elif loss_type == 'JaccardLikeLoss':
-        criterion = jaccard_like_loss
-    elif loss_type == 'ComboLoss':
-        criterion = lambda pred, gts: F.binary_cross_entropy_with_logits(pred, gts) + soft_dice_loss(pred, gts)
-    elif loss_type == 'WeightedComboLoss':
-        criterion = lambda pred, gts: 2 * F.binary_cross_entropy_with_logits(pred, gts) + soft_dice_loss(pred, gts)
-    elif loss_type == 'FrankensteinLoss':
-        criterion = lambda pred, gts: F.binary_cross_entropy_with_logits(pred, gts) + jaccard_like_balanced_loss(pred, gts)
+    elif loss_type == 'PowerJaccardLoss':
+        criterion = power_jaccard_loss
     elif loss_type == 'MeanSquareErrorLoss':
         criterion = nn.MSELoss()
     elif loss_type == 'IoULoss':
         criterion = iou_loss
     elif loss_type == 'DiceLikeLoss':
         criterion = dice_like_loss
-    elif loss_type == 'JaccardMoreLikeLoss':
-        criterion = jaccard_more_like_loss
     else:
         raise Exception(f'unknown loss {loss_type}')
 
@@ -145,7 +137,7 @@ def dice_like_loss(input: torch.Tensor, target: torch.Tensor):
     return 1 - ((2. * intersection) / denom)
 
 
-def jaccard_more_like_loss(input: torch.Tensor, target: torch.Tensor):
+def power_jaccard_loss(input: torch.Tensor, target: torch.Tensor):
     input_sigmoid = torch.sigmoid(input)
     eps = 1e-6
 

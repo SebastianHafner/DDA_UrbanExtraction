@@ -8,7 +8,6 @@ INFERENCE:
 
 MODEL:
   IN_CHANNELS: 10
-  LOSS_TYPE: 'JaccardMoreLikeLoss'
 
 DATALOADER:
   MODE: 'optical'

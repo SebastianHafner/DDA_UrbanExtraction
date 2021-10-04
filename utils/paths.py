@@ -9,7 +9,8 @@ OUTPUT = '/storage/shafner/urban_extraction_output/'
 SPACENET7_METADATA = 'sn7_metadata_urban_dataset.csv'
 
 
-def load_paths() -> dict:
+# TODO: define return type as cfg node from experiment manager
+def load_paths():
     C = experiment_manager.CfgNode()
     C.HOME = HOME
     C.DATASET = DATASET
@@ -40,6 +41,11 @@ def setup_directories():
     # saving networks
     networks_dir = Path(dirs.OUTPUT) / 'networks'
     networks_dir.mkdir(exist_ok=True)
+
+    # plots
+    plots_dir = Path(dirs.OUTPUT) / 'plots'
+    plots_dir.mkdir(exist_ok=True)
+
 
 
 if __name__ == '__main__':

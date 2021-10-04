@@ -42,11 +42,6 @@ class AbstractUrbanExtractionDataset(torch.utils.data.Dataset):
         img = img[:, :, self.s2_indices]
         return np.nan_to_num(img).astype(np.float32), transform, crs
 
-    def _get_auxiliary_data(self, aux_input, site, patch_id):
-        file = self.root_path / site / aux_input / f'{aux_input}_{site}_{patch_id}.tif'
-        img, transform, crs = geofiles.read_tif(file)
-        return np.nan_to_num(img).astype(np.float32), transform, crs
-
     def _get_label_data(self, site, patch_id):
         label = self.cfg.DATALOADER.LABEL
         label_file = self.root_path / site / label / f'{label}_{site}_{patch_id}.tif'
@@ -191,17 +186,12 @@ class AbstractSpaceNet7Dataset(torch.utils.data.Dataset):
         return np.nan_to_num(img).astype(np.float32), transform, crs
 
     def _get_label_data(self, aoi_id):
-
         label = self.cfg.DATALOADER.LABEL
         label_file = self.root_path / label / f'{label}_{aoi_id}.tif'
         img, transform, crs = geofiles.read_tif(label_file)
-
+        img = img > 0
         return np.nan_to_num(img).astype(np.float32), transform, crs
 
-    def _get_auxiliary_data(self, aux_input, aoi_id):
-        file = self.root_path / aux_input / f'{aux_input}_{aoi_id}.tif'
-        img, transform, crs = geofiles.read_tif(file)
-        return np.nan_to_num(img).astype(np.float32), transform, crs
 
     def get_index(self, aoi_id: str):
         for i, sample in enumerate(self.samples):

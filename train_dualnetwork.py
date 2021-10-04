@@ -31,8 +31,6 @@ def run_training(cfg):
     net.to(device)
     optimizer = optim.AdamW(net.parameters(), lr=cfg.TRAINER.LR, weight_decay=0.01)
 
-    global_step = 0
-
     sar_criterion = loss_functions.get_criterion(cfg.MODEL.LOSS_TYPE)
     optical_criterion = loss_functions.get_criterion(cfg.MODEL.LOSS_TYPE)
     fusion_criterion = loss_functions.get_criterion(cfg.MODEL.LOSS_TYPE)

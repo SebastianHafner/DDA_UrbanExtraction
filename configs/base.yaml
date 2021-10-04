@@ -1,7 +1,6 @@
 SEED: 7
 DEBUG: True
 LOG_FREQ: 1000
-OUTPUT_BASE_DIR: '/storage/shafner/urban_extraction/networks'
 SAVE_CHECKPOINTS: [5, 10, 15, 20]
 INFERENCE:
   CHECKPOINT: 0

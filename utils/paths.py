@@ -3,9 +3,10 @@ from pathlib import Path
 from utils import experiment_manager
 
 # set the paths
-HOME = '/home/shafner/DDA_UrbanExtraction'
-DATASET = '/storage/shafner/urban_extraction/urban_dataset'
-OUTPUT = '/storage/shafner/urban_extraction_output/'
+HOME = 'C:/Users/shafner/repos/DDA_UrbanExtraction'  # '/home/shafner/DDA_UrbanExtraction'
+DATASET = 'C:/Users/shafner/datasets/urban_dataset'  # '/storage/shafner/urban_extraction/urban_dataset'
+DATASET_SPACENET7S1S2 = 'C:/Users/shafner/datasets/spacenet7_s1s2_dataset_v3'
+OUTPUT = 'C:/Users/shafner/urban_extraction/output'  # '/storage/shafner/urban_extraction_output/'
 SPACENET7_METADATA = 'sn7_metadata_urban_dataset.csv'
 
 
@@ -14,6 +15,7 @@ def load_paths():
     C = experiment_manager.CfgNode()
     C.HOME = HOME
     C.DATASET = DATASET
+    C.DATASET_SPACENET7S1S2 = DATASET_SPACENET7S1S2
     C.OUTPUT = OUTPUT
     C.SPACENET7_METADATA = SPACENET7_METADATA
     return C.clone()

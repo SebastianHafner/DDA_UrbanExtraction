@@ -195,6 +195,7 @@ if __name__ == '__main__':
     if not cfg.DEBUG:
         wandb.init(
             name=cfg.NAME,
+            config=cfg,
             project='urban_extraction',
             tags=['run', 'urban', 'extraction', 'segmentation', ],
         )

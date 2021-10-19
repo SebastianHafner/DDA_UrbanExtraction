@@ -3,9 +3,9 @@ from pathlib import Path
 from utils import experiment_manager
 
 # set the paths
-HOME = '/home/shafner/DDA_UrbanExtraction'
-DATASET = '/storage/shafner/urban_extraction/urban_dataset'
-OUTPUT = '/storage/shafner/urban_extraction_output/'
+HOME = 'C:/Users/shafner/repos/DDA_UrbanExtraction'  # '/home/shafner/DDA_UrbanExtraction'
+DATASET = 'C:/Users/shafner/datasets/urban_dataset'  # '/storage/shafner/urban_extraction/urban_dataset'
+OUTPUT = 'C:/Users/shafner/urban_extraction/output'  # '/storage/shafner/urban_extraction_output/'
 SPACENET7_METADATA = 'sn7_metadata_urban_dataset.csv'
 
 

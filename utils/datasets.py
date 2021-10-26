@@ -20,7 +20,7 @@ class AbstractUrbanExtractionDataset(torch.utils.data.Dataset):
         # creating boolean feature vector to subset sentinel 1 and sentinel 2 bands
         s1_bands = ['VV', 'VH']
         self.s1_indices = self._get_indices(s1_bands, cfg.DATALOADER.SENTINEL1_BANDS)
-        s2_bands = ['B2', 'B3', 'B4', 'B5', 'B6', 'B6', 'B8', 'B8A', 'B11', 'B12']
+        s2_bands = ['B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B11', 'B12']
         self.s2_indices = self._get_indices(s2_bands, cfg.DATALOADER.SENTINEL2_BANDS)
 
     @abstractmethod
@@ -279,7 +279,8 @@ class UrbanExtractionSpacenet7S1S2Dataset(AbstractUrbanExtractionDataset):
         fname = f'{sensor}_{aoi_id}_{year}_{month:02d}.tif'
         file = Path(self.dirs.DATASET_SPACENET7S1S2) / aoi_id / sensor / fname
         img, transform, crs = geofiles.read_tif(file)
-        img = img[:, :, self.s1_indices]
+        band_indices = self.s1_indices if sensor == 'sentinel1' else self.s2_indices
+        img = img[:, :, band_indices]
         return np.nan_to_num(img).astype(np.float32), transform, crs
 
     def __len__(self):
@@ -554,3 +555,123 @@ class TilesInferenceDataset(torch.utils.data.Dataset):
 
     def __str__(self):
         return f'Dataset with {self.length} samples across {len(self.sites)} sites.'
+
+
+# dataset for continuous urban change detection project
+class InferenceCUCDDataset(torch.utils.data.Dataset):
+
+    def __init__(self, cfg, include_geo: bool = False):
+        super().__init__()
+
+        self.cfg = cfg
+        self.include_geo = include_geo
+
+        dirs = paths.load_paths()
+        self.root_path = Path(dirs.DATASET_SPACENET7S1S2)
+        self.metadata = geofiles.load_json(self.root_path / 'metadata.json')
+
+        self.mode = cfg.DATALOADER.MODE
+
+        self.samples = []
+        for aoi_id in self.metadata['aois'].keys():
+            for sample in self.metadata['aois'][aoi_id]:
+                year, month, mask, s1, s2 = sample
+                sample = {
+                    'aoi_id': aoi_id,
+                    'year': year,
+                    'month': month,
+                    'has_mask': mask,
+                }
+                if self.mode == 'sar' and s1:
+                    self.samples.append(sample)
+                if self.mode == 'optical' and s2:
+                    self.samples.append(sample)
+                if self.mode == 'fusion' and s1 and s2:
+                    self.samples.append(sample)
+        self.length = len(self.samples)
+
+        self.transform = transforms.Compose([augmentations.Numpy2Torch()])
+
+        # creating boolean feature vector to subset sentinel 1 and sentinel 2 bands
+        s1_bands = self.metadata['s1_bands']
+        s2_bands = self.metadata['s2_bands']
+        # TODO: fix this without breaking the rest of the code :)
+        s2_bands[5] = 'B7'
+        self.s1_indices = self._get_indices(s1_bands, cfg.DATALOADER.SENTINEL1_BANDS)
+        self.s2_indices = self._get_indices(s2_bands, cfg.DATALOADER.SENTINEL2_BANDS)
+
+    def __getitem__(self, index):
+
+        # loading metadata of sample
+        sample = self.samples[index]
+        aoi_id, year, month, has_mask = sample['aoi_id'], sample['year'], sample['month'], sample['has_mask']
+
+        if self.mode == 'sar':
+            img, _, _ = self._get_cucd_sentinel1_data(aoi_id, year, month)
+        elif self.mode == 'optical':
+            img, _, _ = self._get_cucd_sentinel2_data(aoi_id, year, month)
+        else:
+            s1_img, _, _ = self._get_cucd_sentinel1_data(aoi_id, year, month)
+            s2_img, _, _ = self._get_cucd_sentinel2_data(aoi_id, year, month)
+            img = np.concatenate([s1_img, s2_img], axis=-1)
+
+        label, geotransform, crs = self._get_cucd_label_data(aoi_id, year, month)
+        if has_mask:
+            mask, _, _ = self._get_cucd_mask_data(aoi_id, year, month)
+            label[mask] = np.NaN
+
+        img, label = self.transform((img, label))
+        item = {
+            'x': img,
+            'y': label,
+            'aoi_id': aoi_id,
+            'year': year,
+            'month': month,
+            'has_mask': has_mask
+        }
+
+        if self.include_geo:
+            item['transform'] = geotransform
+            item['crs'] = crs
+
+        return item
+
+    def _get_cucd_sentinel1_data(self, aoi_id: str, year: int, month: int):
+        file = self.root_path / aoi_id / 'sentinel1' / f'sentinel1_{aoi_id}_{year}_{month:02}.tif'
+        img, transform, crs = geofiles.read_tif(file)
+        img = img[:, :, self.s1_indices]
+        return np.nan_to_num(img).astype(np.float32), transform, crs
+
+    def _get_cucd_sentinel2_data(self, aoi_id: str, year: int, month: int):
+        file = self.root_path / aoi_id / 'sentinel2' / f'sentinel2_{aoi_id}_{year}_{month:02}.tif'
+        img, transform, crs = geofiles.read_tif(file)
+        img = img[:, :, self.s2_indices]
+        return np.nan_to_num(img).astype(np.float32), transform, crs
+
+    def _get_cucd_label_data(self, aoi_id: str, year: int, month: int):
+        file = self.root_path / aoi_id / 'buildings' / f'buildings_{aoi_id}_{year}_{month:02}.tif'
+        img, transform, crs = geofiles.read_tif(file)
+        return np.nan_to_num(img).astype(np.float32), transform, crs
+
+    def _get_cucd_mask_data(self, aoi_id: str, year: int, month: int):
+        file = self.root_path / aoi_id / f'masks_{aoi_id}.tif'
+        img, transform, crs = geofiles.read_tif(file)
+        index = self._get_cucd_mask_index(aoi_id, year, month)
+        return img[:, :, index], transform, crs
+
+    def _get_cucd_mask_index(self, aoi_id: str, year: int, month: int):
+        md = self.metadata['aois'][aoi_id]
+        md_masked = [[y, m, mask, *_] for y, m, mask, *_ in md if mask]
+        for i, (y, m, *_) in enumerate(md_masked):
+            if year == y and month == m:
+                return i
+
+    @staticmethod
+    def _get_indices(bands, selection):
+        return [bands.index(band) for band in selection]
+
+    def __len__(self):
+        return self.length
+
+    def __str__(self):
+        return f'Dataset with {self.length} samples.'

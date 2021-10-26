@@ -1,0 +1,222 @@
+wandb_version: 1
+
+AUGMENTATION:
+  desc: null
+  value:
+    COLOR_SHIFT: false
+    GAMMA_CORRECTION: true
+    IMAGE_OVERSAMPLING_TYPE: none
+    RANDOM_FLIP: true
+    RANDOM_ROTATE: true
+CONFIG_DIR:
+  desc: null
+  value: config/
+CONSISTENCY_TRAINER:
+  desc: null
+  value:
+    APPLY_THRESHOLD: false
+    CONSISTENCY_LOSS_TYPE: PowerJaccardLoss
+    LOSS_FACTOR: 0.5
+    WEIGHT_DECAY: 0.998
+DATALOADER:
+  desc: null
+  value:
+    AUXILIARY_INPUTS: []
+    INCLUDE_UNLABELED: true
+    LABEL: buildings
+    MODE: fusion
+    NUM_WORKER: 8
+    SENTINEL1_BANDS:
+    - VV
+    - VH
+    SENTINEL2_BANDS:
+    - B2
+    - B3
+    - B4
+    - B5
+    - B6
+    - B7
+    - B8
+    - B8A
+    - B11
+    - B12
+    SHUFFLE: true
+DATASETS:
+  desc: null
+  value:
+    PATH: /storage/shafner/urban_extraction/urban_dataset/
+    TEST: []
+    TESTING: /storage/shafner/urban_extraction/urban_dataset/sn7/
+    TRAIN: []
+    TRAINING:
+    - albuquerque
+    - atlanta
+    - charlston
+    - columbus
+    - dallas
+    - denver
+    - elpaso
+    - houston
+    - kansascity
+    - lasvegas
+    - losangeles
+    - miami
+    - minneapolis
+    - montreal
+    - phoenix
+    - quebec
+    - saltlakecity
+    - sandiego
+    - santafe
+    - seattle
+    - stgeorge
+    - toronto
+    - tucson
+    - winnipeg
+    UNLABELED:
+    - beijing
+    - dakar
+    - dubai
+    - jakarta
+    - kairo
+    - kigali
+    - lagos
+    - mexicocity
+    - mumbai
+    - riodejanairo
+    - shanghai
+    - buenosaires
+    - bogota
+    - sanjose
+    - santiagodechile
+    - kapstadt
+    - tripoli
+    - freetown
+    - london
+    - madrid
+    - kinshasa
+    - manila
+    - moscow
+    - newdehli
+    - nursultan
+    - perth
+    - tokio
+    - stockholm
+    - sidney
+    - maputo
+    - caracas
+    - santacruzdelasierra
+    - saopaulo
+    - asuncion
+    - lima
+    - paramaribo
+    - libreville
+    - djibuti
+    - beirut
+    - baghdad
+    - athens
+    - islamabad
+    - hanoi
+    - bangkok
+    - dhaka
+    - bengaluru
+    - taipeh
+    - berlin
+    - nanning
+    - wuhan
+    - daressalam
+    - milano
+    - zhengzhou
+    - hefei
+    - xian
+    - seoul
+    - ibadan
+    - benincity
+    - abidjan
+    - accra
+    - amsterdam
+    - riyadh
+    - amman
+    - damascus
+    - nouakchott
+    - prague
+    - sanaa
+    - dahmar
+    - kuwaitcity
+    - tindouf
+    - tehran
+    VALIDATION:
+    - calgary
+    - newyork
+    - sanfrancisco
+    - vancouver
+DEBUG:
+  desc: null
+  value: false
+INFERENCE:
+  desc: null
+  value:
+    CHECKPOINT: 15
+    THRESHOLDS:
+      TRAIN: 0.0
+      VALIDATION: 0.0
+LOG_FREQ:
+  desc: null
+  value: 1000
+MAX_EPOCHS:
+  desc: null
+  value: 1
+MODEL:
+  desc: null
+  value:
+    BINARY_CLASSIFICATION: false
+    IN_CHANNELS: 12
+    LOSS_TYPE: PowerJaccardLoss
+    NEGATIVE_WEIGHT: 1
+    OUT_CHANNELS: 1
+    POSITIVE_WEIGHT: 250
+    TOPOLOGY:
+    - 64
+    - 128
+    TYPE: dualstreamunet
+NAME:
+  desc: null
+  value: fusionda_cucd
+OUTPUT_BASE_DIR:
+  desc: null
+  value: output/
+SAVE_CHECKPOINTS:
+  desc: null
+  value:
+  - 15
+  - 20
+SEED:
+  desc: null
+  value: 7
+TRAINER:
+  desc: null
+  value:
+    BATCH_SIZE: 4
+    CHECKPOINT_PERIOD: 5000
+    EPOCHS: 20
+    LR: 0.0001
+    OPTIMIZER: adamw
+_wandb:
+  desc: null
+  value:
+    cli_version: 0.12.1
+    framework: torch
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    python_version: 3.7.11
+    start_time: 1634774079
+    t:
+      1:
+      - 1
+      2:
+      - 1
+      4: 3.7.11
+      5: 0.12.1
+      8:
+      - 3
+      - 5

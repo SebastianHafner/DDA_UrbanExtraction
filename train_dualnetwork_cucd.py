@@ -153,6 +153,10 @@ def run_training(cfg):
                 n_labeled, n_notlabeled = 0, 0
 
             if cfg.DEBUG:
+                # testing evaluation
+                _ = evaluation.model_evaluation(net, cfg, device, thresholds, 'training', epoch_float, global_step,
+                                                max_samples=100)
+                evaluation.model_testing(net, cfg, device, 50, global_step, epoch_float)
                 break
             # end of batch
 
@@ -195,6 +199,7 @@ if __name__ == '__main__':
     if not cfg.DEBUG:
         wandb.init(
             name=cfg.NAME,
+            config=cfg,
             project='urban_extraction',
             tags=['run', 'urban', 'extraction', 'segmentation', ],
         )

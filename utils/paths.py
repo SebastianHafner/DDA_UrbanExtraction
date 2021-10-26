@@ -49,6 +49,5 @@ def setup_directories():
     plots_dir.mkdir(exist_ok=True)
 
 
-
 if __name__ == '__main__':
     setup_directories()

@@ -1,0 +1,27 @@
+{
+    "os": "Windows-10-10.0.17763-SP0",
+    "python": "3.7.11",
+    "heartbeatAt": "2021-10-20T23:35:52.918019",
+    "startedAt": "2021-10-20T23:35:51.541020",
+    "docker": null,
+    "gpu": "NVIDIA GeForce GTX 1660",
+    "gpu_count": 1,
+    "cpu_count": 16,
+    "cuda": null,
+    "args": [
+        "-c",
+        "fusionda"
+    ],
+    "state": "running",
+    "program": "train_dualnetwork.py",
+    "codePath": "train_dualnetwork.py",
+    "git": {
+        "remote": "https://github.com/SebastianHafner/DDA_UrbanExtraction.git",
+        "commit": "3f393870d5d5ccf5b95a13dde55fd1dd6ab1ec3b"
+    },
+    "email": null,
+    "root": "C:/Users/shafner/repos/DDA_UrbanExtraction",
+    "host": "KTH-11632",
+    "username": "shafner",
+    "executable": "C:\\Users\\shafner\\AppData\\Local\\Continuum\\anaconda3\\envs\\local\\python.exe"
+}

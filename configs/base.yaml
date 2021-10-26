@@ -36,7 +36,7 @@ DATALOADER:
   LABEL_THRESH: 0.0
   MODE: 'fusion'
   SENTINEL1_BANDS: ['VV', 'VH']
-  SENTINEL2_BANDS: ['B2', 'B3', 'B4', 'B5', 'B6', 'B6', 'B8', 'B8A', 'B11', 'B12']
+  SENTINEL2_BANDS: ['B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B11', 'B12']
   AUXILIARY_INPUTS: []
   INCLUDE_UNLABELED: False
 

@@ -1,0 +1,27 @@
+{
+    "os": "Windows-10-10.0.17763-SP0",
+    "python": "3.7.11",
+    "heartbeatAt": "2021-10-19T10:32:58.500847",
+    "startedAt": "2021-10-19T10:32:57.100855",
+    "docker": null,
+    "gpu": "NVIDIA GeForce GTX 1660",
+    "gpu_count": 1,
+    "cpu_count": 16,
+    "cuda": null,
+    "args": [
+        "-c",
+        "sar"
+    ],
+    "state": "running",
+    "program": "C:/Users/shafner/repos/DDA_UrbanExtraction/train_network.py",
+    "codePath": "train_network.py",
+    "git": {
+        "remote": "https://github.com/SebastianHafner/DDA_UrbanExtraction.git",
+        "commit": "5c1df1407857ba53dca318371f800b45c9ef0d5b"
+    },
+    "email": null,
+    "root": "C:/Users/shafner/repos/DDA_UrbanExtraction",
+    "host": "KTH-11632",
+    "username": "shafner",
+    "executable": "C:\\Users\\shafner\\AppData\\Local\\Continuum\\anaconda3\\envs\\local\\python.exe"
+}

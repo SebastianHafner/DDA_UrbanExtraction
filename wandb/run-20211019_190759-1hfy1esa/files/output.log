@@ -1,0 +1,33 @@
+╒═══════════════════╤══════════╕
+│ run config name   │          │
+╞═══════════════════╪══════════╡
+│ CONFIG_NAME       │ fusionda │
+├───────────────────┼──────────┤
+│ device            │ cuda     │
+├───────────────────┼──────────┤
+│ epochs            │ 20       │
+├───────────────────┼──────────┤
+│ learning rate     │ 0.0001   │
+├───────────────────┼──────────┤
+│ batch size        │ 8        │
+╘═══════════════════╧══════════╛
+down1: in 64, out 128
+down2: in 128, out 128
+up2: in 256, out 64
+up1: in 128, out 64
+down1: in 64, out 128
+down2: in 128, out 128
+up2: in 256, out 64
+up1: in 128, out 64
+Dataset with 49491 samples (39.6 % labeled) across 95 sites.
+Starting epoch 1/20.
+Traceback (most recent call last):
+  File "train_dualnetwork.py", line 204, in <module>
+    run_training(cfg)
+  File "train_dualnetwork.py", line 120, in run_training
+    loss.backward()
+  File "C:\Users\shafner\AppData\Local\Continuum\anaconda3\envs\local\lib\site-packages\torch\_tensor.py", line 255, in backward
+    torch.autograd.backward(self, gradient, retain_graph, create_graph, inputs=inputs)
+  File "C:\Users\shafner\AppData\Local\Continuum\anaconda3\envs\local\lib\site-packages\torch\autograd\__init__.py", line 149, in backward
+    allow_unreachable=True, accumulate_grad=True)  # allow_unreachable flag
+RuntimeError: Unable to find a valid cuDNN algorithm to run convolution

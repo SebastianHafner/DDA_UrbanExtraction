@@ -1,0 +1,14 @@
+_BASE_: "fusionda_cucd.yaml"
+DEBUG: False
+INFERENCE:
+  CHECKPOINT: 15
+  THRESHOLDS:
+    TRAIN: 0.00
+    VALIDATION: 0.00
+
+AUGMENTATION:
+  IMAGE_OVERSAMPLING_TYPE: 'none' # [none, simple]
+  RANDOM_FLIP: True
+  RANDOM_ROTATE: True
+  COLOR_SHIFT: False
+  GAMMA_CORRECTION: False

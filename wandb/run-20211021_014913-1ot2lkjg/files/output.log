@@ -1,0 +1,49 @@
+╒═══════════════════╤═══════════════╕
+│ run config name   │               │
+╞═══════════════════╪═══════════════╡
+│ CONFIG_NAME       │ fusionda_cucd │
+├───────────────────┼───────────────┤
+│ device            │ cuda          │
+├───────────────────┼───────────────┤
+│ epochs            │ 20            │
+├───────────────────┼───────────────┤
+│ learning rate     │ 0.0001        │
+├───────────────────┼───────────────┤
+│ batch size        │ 4             │
+╘═══════════════════╧═══════════════╛
+down1: in 64, out 128
+down2: in 128, out 128
+up2: in 256, out 64
+up1: in 128, out 64
+down1: in 64, out 128
+down2: in 128, out 128
+up2: in 256, out 64
+up1: in 128, out 64
+Dataset with 50595 samples (38.7 % labeled) across 95 sites.
+Starting epoch 1/20.
+Traceback (most recent call last):
+  File "train_dualnetwork_cucd.py", line 208, in <module>
+    run_training(cfg)
+  File "train_dualnetwork_cucd.py", line 71, in run_training
+    for i, batch in enumerate(dataloader):
+  File "C:\Users\shafner\AppData\Local\Continuum\anaconda3\envs\local\lib\site-packages\torch\utils\data\dataloader.py", line 521, in __next__
+    data = self._next_data()
+  File "C:\Users\shafner\AppData\Local\Continuum\anaconda3\envs\local\lib\site-packages\torch\utils\data\dataloader.py", line 1203, in _next_data
+    return self._process_data(data)
+  File "C:\Users\shafner\AppData\Local\Continuum\anaconda3\envs\local\lib\site-packages\torch\utils\data\dataloader.py", line 1229, in _process_data
+    data.reraise()
+  File "C:\Users\shafner\AppData\Local\Continuum\anaconda3\envs\local\lib\site-packages\torch\_utils.py", line 425, in reraise
+    raise self.exc_type(msg)
+RuntimeError: Caught RuntimeError in DataLoader worker process 2.
+Original Traceback (most recent call last):
+  File "C:\Users\shafner\AppData\Local\Continuum\anaconda3\envs\local\lib\site-packages\torch\utils\data\_utils\worker.py", line 287, in _worker_loop
+    data = fetcher.fetch(index)
+  File "C:\Users\shafner\AppData\Local\Continuum\anaconda3\envs\local\lib\site-packages\torch\utils\data\_utils\fetch.py", line 47, in fetch
+    return self.collate_fn(data)
+  File "C:\Users\shafner\AppData\Local\Continuum\anaconda3\envs\local\lib\site-packages\torch\utils\data\_utils\collate.py", line 74, in default_collate
+    return {key: default_collate([d[key] for d in batch]) for key in elem}
+  File "C:\Users\shafner\AppData\Local\Continuum\anaconda3\envs\local\lib\site-packages\torch\utils\data\_utils\collate.py", line 74, in <dictcomp>
+    return {key: default_collate([d[key] for d in batch]) for key in elem}
+  File "C:\Users\shafner\AppData\Local\Continuum\anaconda3\envs\local\lib\site-packages\torch\utils\data\_utils\collate.py", line 56, in default_collate
+    return torch.stack(batch, 0, out=out)
+RuntimeError: stack expects each tensor to be equal size, but got [4, 256, 256] at entry 0 and [12, 256, 256] at entry 1

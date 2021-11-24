@@ -1,27 +1,15 @@
 SEED: 7
-DEBUG: True
+DEBUG: False
 LOG_FREQ: 1000
-SAVE_CHECKPOINTS: [5, 10, 15, 20]
+SAVE_CHECKPOINTS: [5, 10, 15, 10]
 INFERENCE:
-  CHECKPOINT: 0
+  CHECKPOINT: 15
   THRESHOLDS:
     TRAIN: 0.0
     VALIDATION: 0.0
 
-TRAINER:
-  LR: 1e-4
-  BATCH_SIZE: 8
-  EPOCHS: 20
-  OPTIMIZER: 'adamw'
-
-CONSISTENCY_TRAINER:
-  LOSS_FACTOR: 0.1
-  WEIGHT_DECAY: 0.998
-  APPLY_THRESHOLD: False
-  CONSISTENCY_LOSS_TYPE: 'PowerJaccardLoss'
-
 MODEL:
-  TYPE: 'unet'
+  TYPE: 'dualstreamunet'
   OUT_CHANNELS: 1
   IN_CHANNELS: 12
   LOSS_TYPE: 'PowerJaccardLoss'
@@ -33,19 +21,13 @@ DATALOADER:
   NUM_WORKER: 8
   SHUFFLE: True
   LABEL: 'buildings'
-  LABEL_THRESH: 0.0
   MODE: 'fusion'
+
   SENTINEL1_BANDS: ['VV', 'VH']
   SENTINEL2_BANDS: ['B2', 'B3', 'B4', 'B5', 'B6', 'B6', 'B8', 'B8A', 'B11', 'B12']
   AUXILIARY_INPUTS: []
-  INCLUDE_UNLABELED: False
+  INCLUDE_UNLABELED: True
 
-AUGMENTATION:
-  IMAGE_OVERSAMPLING_TYPE: 'none' # [none, simple]
-  RANDOM_FLIP: True
-  RANDOM_ROTATE: True
-  COLOR_SHIFT: False
-  GAMMA_CORRECTION: True
 
 DATASETS:
   PATH: '/storage/shafner/urban_extraction/urban_dataset/'
@@ -54,13 +36,33 @@ DATASETS:
              'quebec', 'saltlakecity', 'sandiego', 'santafe', 'seattle', 'stgeorge', 'toronto',
              'tucson', 'winnipeg']
   VALIDATION: ['calgary', 'newyork', 'sanfrancisco', 'vancouver']
-  UNLABELED: ['beijing', 'dakar', 'dubai', 'jakarta', 'kairo', 'kigali', 'lagos', 'mexicocity', 'mumbai',
+  UNLABELED: ['dakar', 'dubai', 'jakarta', 'kairo', 'kigali', 'lagos', 'mumbai',
               'riodejanairo', 'shanghai', 'buenosaires', 'bogota', 'sanjose', 'santiagodechile', 'kapstadt', 'tripoli',
               'freetown', 'london', 'madrid', 'kinshasa', 'manila', 'moscow', 'newdehli', 'nursultan', 'perth',
-              'tokio', 'stockholm', 'sidney', 'maputo', 'caracas', 'santacruzdelasierra', 'saopaulo', 'asuncion',
+              'tokio', 'maputo', 'caracas', 'santacruzdelasierra', 'saopaulo', 'asuncion',
               'lima', 'paramaribo', 'libreville', 'djibuti', 'beirut', 'baghdad', 'athens', 'islamabad', 'hanoi',
-              'bangkok', 'dhaka', 'bengaluru', 'taipeh', 'berlin', 'nanning', 'wuhan', 'daressalam', 'milano']
+              'bangkok', 'dhaka', 'bengaluru', 'taipeh', 'berlin', 'nanning', 'wuhan', 'daressalam', 'milano',
+              'zhengzhou', 'hefei', 'xian', 'seoul', 'ibadan', 'benincity', 'abidjan', 'accra', 'amsterdam', 'riyadh',
+              'amman', 'damascus', 'nouakchott', 'prague', 'sanaa', 'dahmar', 'kuwaitcity', 'tindouf', 'tehran',
+              'beijing2019', 'daressalam2019', 'jakarta2019', 'milano2019', 'mumbai2019', 'newyork2019',
+              'riodejanairo2019', 'sidney2019', 'stockholm2019', 'mexicocity2019']
   TESTING: '/storage/shafner/urban_extraction/urban_dataset/sn7/'
 
+TRAINER:
+  LR: 1e-4
+  BATCH_SIZE: 2
+  EPOCHS: 20
+  OPTIMIZER: 'adamw'
 
+AUGMENTATION:
+  IMAGE_OVERSAMPLING_TYPE: 'none' # [none, simple]
+  RANDOM_FLIP: True
+  RANDOM_ROTATE: True
+  COLOR_SHIFT: False
+  GAMMA_CORRECTION: True
 
+CONSISTENCY_TRAINER:
+  LOSS_FACTOR: 0.5
+  WEIGHT_DECAY: 0.998
+  APPLY_THRESHOLD: False
+  CONSISTENCY_LOSS_TYPE: 'PowerJaccardLoss'

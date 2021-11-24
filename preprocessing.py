@@ -459,7 +459,7 @@ if __name__ == '__main__':
     # spacenet7
     # ee.Initialize()
 
-    test_aoi = 'L15-0571E-1075N_2287_3888_13'
+    # test_aoi = 'L15-0571E-1075N_2287_3888_13'
 
     # for aoi_id in tqdm(get_all_aoi_ids()):
     # show_stable_building_pixels(aoi_id)
@@ -470,12 +470,12 @@ if __name__ == '__main__':
 
     # construct_buildings_file(METADATA_FILE)
 
-    samples_save_path = Path('/storage/shafner/urban_extraction/urban_dataset/sn7')
-    construct_samples_file(METADATA_FILE, samples_save_path)
+    # samples_save_path = Path('/storage/shafner/urban_extraction/urban_dataset/sn7')
+    # construct_samples_file(METADATA_FILE, samples_save_path)
 
 
     # dataset_path = Path('C:/Users/shafner/urban_extraction/data/dummy_data')
-    dataset_path = Path('/storage/shafner/urban_extraction/urban_dataset')
+    dataset_path = Path('C:/Users/shafner/datasets/urban_dataset')
 
     labeled_sites = ['albuquerque', 'atlanta', 'calgary', 'charlston', 'columbus', 'dallas', 'denver', 'elpaso',
                      'houston', 'kansascity', 'lasvegas', 'losangeles', 'miami', 'minneapolis', 'montreal', 'newyork',
@@ -492,9 +492,14 @@ if __name__ == '__main__':
     labeled_sites = ['kampala', 'stockholm', 'daressalam', 'sidney']
     unlabeled_sites = ['tehran', 'baghdad', 'tindouf', 'kuwaitcity', 'dahmar', 'sanaa']
     all_sites = labeled_sites + unlabeled_sites
-    for i, site in enumerate(all_sites):
+
+    new_sites = ['beijing2019', 'kairo2019', 'charlston2019', 'detroit2019', 'dubai2019', 'guangzhou2019',
+                 'heidelberg2019', 'kigali2019', 'lapaz2019', 'lagos2019', 'nairobi2019', 'nouakchott2019',
+                 'shanghai2019', 'daressalam2019', 'jakarta2019', 'milano2019', 'mumbai2019', 'newyork2019',
+                 'riodejanairo2019', 'sidney2019', 'stockholm2019', 'mexicocity2019']
+    for i, site in enumerate(new_sites):
         if i >= 0:
             labeled = True if site in labeled_sites else False
-            preprocess(dataset_path, site, labels_exist=labeled, patch_size=256)
+            preprocess(dataset_path, site, labels_exist=False, patch_size=256)
 
 

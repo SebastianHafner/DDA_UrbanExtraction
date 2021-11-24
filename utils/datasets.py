@@ -367,13 +367,8 @@ class TilesInferenceDataset(torch.utils.data.Dataset):
 
     def _get_label_data(self, patch_id):
         label = self.cfg.DATALOADER.LABEL
-        threshold = self.cfg.DATALOADER.LABEL_THRESH
-
         label_file = self.root_dir / self.site / label / f'{label}_{self.site}_{patch_id}.tif'
         img, transform, crs = geofiles.read_tif(label_file)
-        if threshold >= 0:
-            img = img > threshold
-
         return np.nan_to_num(img).astype(np.float32), transform, crs
 
     def get_arr(self, dtype=np.uint8):

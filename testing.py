@@ -47,9 +47,10 @@ def run_inference(config_name: str, site: str):
             prob_output[i_start:i_end, j_start:j_end, 0] = center_prob
 
     # config inference directory
-    output_file = Path(dirs.OUTPUT) / 'inference' / config_name / f'prob_{site}_{config_name}.tif'
-    output_file.parent.mdkir(exist_ok=True)
-    geofiles.write_tif(output_file, prob_output, transform, crs)
+    out_folder = Path(dirs.OUTPUT) / 'inference' / config_name
+    out_folder.mkdir(exist_ok=True)
+    out_file = out_folder / f'buap_{site}_{config_name}.tif'
+    geofiles.write_tif(out_file, prob_output, transform, crs)
 
 
 def produce_label(config_name: str, site: str):
@@ -180,7 +181,7 @@ GROUP_NAMES = ['NA_AU', 'SA', 'EU', 'SSA', 'NAF_ME', 'AS']
 COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
 
 
-def run_quantitative_inference_sn7(config_name: str):
+def run_quantitative_inference_sn7(config_name: str, threshold: float = 0.5):
     # loading config and network
     cfg = experiment_manager.load_cfg(config_name)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -206,9 +207,9 @@ def run_quantitative_inference_sn7(config_name: str):
             if group_name not in data.keys():
                 data[group_name] = []
 
-            f1 = metrics.f1_score_from_prob(y_prob, y_true, 0.5)
-            p = metrics.precsision_from_prob(y_prob, y_true, 0.5)
-            r = metrics.recall_from_prob(y_prob, y_true, 0.5)
+            f1 = metrics.f1_score_from_prob(y_prob, y_true, threshold)
+            p = metrics.precsision_from_prob(y_prob, y_true, threshold)
+            r = metrics.recall_from_prob(y_prob, y_true, threshold)
 
             site_data = {
                 'aoi_id': test_site['aoi_id'],
@@ -230,9 +231,10 @@ def run_quantitative_inference_sn7(config_name: str):
 def get_quantitative_data_sn7(config_name: str, allow_run: bool = True):
     dirs = paths.load_paths()
     data_file = Path(dirs.OUTPUT) / 'testing' / f'probabilities_{config_name}.npy'
+    run_quantitative_inference_sn7(config_name, threshold=0.5)
     if not data_file.exists():
         if allow_run:
-            run_quantitative_inference_sn7(config_name)
+            pass
         else:
             raise Exception('No data and not allowed to run quantitative inference!')
     # run_quantitative_inference(config_name)
@@ -284,58 +286,42 @@ def plot_boxplots_sn7(config_names: list, names: list = None):
     metrics = ['f1_score', 'precision', 'recall']
     metric_names = ['F1 score', 'Precision', 'Recall']
     metric_chars = ['A', 'B', 'C']
-    box_width = 0.2
-    wisk_width = 0.1
-    line_width = 2
-    point_size = 40
+    box_width = 0.1
+    line_width = 1
+    boxplot_spacing = 0.16
+
+    def set_box_color(bp, color):
+        plt.setp(bp['boxes'], color=color)
+        plt.setp(bp['whiskers'], color=color)
+        plt.setp(bp['caps'], color=color)
+        plt.setp(bp['medians'], color=color)
 
     for m, (metric, metric_name) in enumerate(zip(metrics, metric_names)):
         fig, ax = plt.subplots(figsize=(12, 5))
 
-        def custom_boxplot(x_pos: float, values: list, color: str, annotation: str = None):
-            min_ = np.min(values)
-            max_ = np.max(values)
-            std = np.std(values)
-            mean = np.mean(values)
-            median = np.median(values)
-            min_ = mean - std
-            max_ = mean + std
-
-            line_kwargs = {'c': color, 'lw': line_width}
-            point_kwargs = {'c': color, 's': point_size}
-
-            # vertical line
-            ax.plot(2 * [x_pos], [min_, max_], **line_kwargs)
-
-            # whiskers
-            x_positions = [x_pos - wisk_width / 2, x_pos + wisk_width / 2]
-            ax.plot(x_positions, [min_, min_], **line_kwargs)
-            ax.plot(x_positions, [max_, max_], **line_kwargs)
-
-            # median
-            ax.scatter([x_pos], [mean], **point_kwargs)
-
-            if annotation is not None:
-                ax.text(-0.07, 0.12, annotation, fontsize=40)
-
-            pass
-
+        # getting data
         for i, config_name in enumerate(config_names):
-
             data = get_quantitative_data_sn7(config_name)
+            boxplot_data = [[site[metric] for site in data[group_name]] for group_name in GROUP_NAMES]
+            x_positions = np.arange(len(GROUP_NAMES)) + i * boxplot_spacing
+            bp = ax.boxplot(
+                boxplot_data,
+                positions=x_positions,
+                widths=box_width,
+                whis=[0, 100],
+                medianprops={"linewidth": 2, "solid_capstyle": "butt"},
+            )
+            set_box_color(bp, COLORS[i])
 
-            for j, group_name in enumerate(GROUP_NAMES):
-                values = [site[metric] for site in data[group_name]]
-                x_pos = j + (i * box_width) + j * 0.1
-                custom_boxplot(x_pos, values, color=COLORS[i], annotation=metric_chars[m])
+        ax.text(-0.07, 0.12, metric_chars[m], fontsize=40)
 
         ax.set_ylim((0, 1))
         ax.set_ylabel(metric_name)
 
-        x_ticks = np.arange(len(GROUP_NAMES)) + (len(config_names) - 1) * box_width / 2
-        x_ticks = [x_tick + i * 0.1 for i, x_tick in enumerate(x_ticks)]
+        x_ticks = np.arange(len(GROUP_NAMES)) + len(config_names) * boxplot_spacing / 2 - boxplot_spacing / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(GROUP_NAMES)
+        # plt.grid(b=True, which='major', axis='y', zorder=0)
 
         if metric == 'f1_score':
             handles = [Line2D([0], [0], color=COLORS[i], lw=line_width) for i in range(len(config_names))]
@@ -519,13 +505,14 @@ def plot_precision_recall_curve_sn7(config_names: list, names: list = None, show
         plt.close(fig)
 
 
+
 if __name__ == '__main__':
 
     config_name = 'sar'
     city = 'calgary'
 
-    config_names = ['sar', 'optical']
-    names = ['SAR', 'Optical']
+    config_names = ['sar', 'optical', 'fusion', 'fusionda']
+    names = ['SAR', 'Optical', 'Fusion', 'Fusion-DA']
 
     aoi_ids = [
         'L15-0357E-1223N_1429_3296_13',  # na
@@ -552,7 +539,31 @@ if __name__ == '__main__':
     # plot_activation_comparison_sn7(config_names, save_plots=False)
     # plot_activation_comparison_assembled_sn7(config_names, names, aoi_ids, save_plot=False)
 
-    plot_precision_recall_curve_sn7(config_names, names, save_plot=False)
+    # plot_precision_recall_curve_sn7(config_names, names, save_plot=False)
     # plot_threshold_dependency(config_names, names)
 
+    complete = ['calgary', 'newyork', 'sanfrancisco', 'vancouver', 'beijing', 'dakar', 'dubai', 'jakarta', 'kairo',
+                'kigali', 'lagos', 'mexicocity', 'mumbai', 'riodejanairo', 'shanghai', 'buenosaires', 'bogota',
+                'sanjose', 'santiagodechile', 'kapstadt', 'tripoli', 'freetown', 'london', 'madrid', 'kinshasa',
+                'manila', 'moscow', 'newdehli', 'nursultan', 'perth', 'tokio', 'stockholm', 'sidney', 'maputo',
+                'caracas', 'santacruzdelasierra', 'saopaulo', 'asuncion', 'lima', 'paramaribo', 'libreville',
+                'djibuti', 'beirut', 'baghdad', 'athens', 'islamabad', 'hanoi', 'bangkok', 'dhaka', 'bengaluru',
+                'taipeh', 'berlin', 'nanning', 'wuhan', 'daressalam', 'milano', 'zhengzhou', 'hefei', 'xian', 'seoul',
+                'ibadan', 'benincity', 'abidjan', 'accra', 'amsterdam', 'riyadh', 'amman', 'damascus', 'nouakchott',
+                'prague', 'sanaa', 'dahmar', 'kuwaitcity', 'tindouf', 'tehran']
 
+
+    cities = ['calgary', 'newyork', 'sanfrancisco', 'vancouver', 'beijing', 'dakar', 'dubai', 'jakarta', 'kairo',
+              'kigali', 'lagos', 'mexicocity', 'mumbai', 'riodejanairo', 'shanghai', 'buenosaires', 'bogota',
+              'sanjose', 'santiagodechile', 'kapstadt', 'tripoli', 'freetown', 'london', 'madrid', 'kinshasa',
+              'manila', 'moscow', 'newdehli', 'nursultan', 'perth', 'tokio', 'stockholm', 'sidney', 'maputo',
+              'caracas', 'santacruzdelasierra', 'saopaulo', 'asuncion', 'lima', 'paramaribo', 'libreville', 'djibuti',
+              'beirut', 'baghdad', 'athens', 'islamabad', 'hanoi', 'bangkok', 'dhaka', 'bengaluru', 'taipeh', 'berlin',
+              'nanning', 'wuhan', 'daressalam', 'milano']
+
+    new_cities = ['beijing2019', 'kairo2019', 'charlston2019', 'detroit2019', 'dubai2019', 'guangzhou2019',
+                  'heidelberg2019', 'kigali2019', 'lapaz2019', 'lagos2019', 'nairobi2019', 'nouakchott2019',
+                  'shanghai2019', 'daressalam2019', 'jakarta2019', 'milano2019', 'mumbai2019', 'newyork2019',
+                  'riodejanairo2019', 'sidney2019', 'stockholm2019', 'mexicocity2019']
+
+    run_inference('fusionda', 'mexicocity2019')

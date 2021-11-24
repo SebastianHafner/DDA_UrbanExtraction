@@ -1,14 +1,14 @@
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib as mpl
-from utils.geotiff import *
+from utils import geofiles
 import numpy as np
 from pathlib import Path
 
 
 def plot_optical(ax, file: Path, vis: str = 'true_color', scale_factor: float = 0.4,
                  show_title: bool = False):
-    img, _, _ = read_tif(file)
+    img, _, _ = geofiles.read_tif(file)
     band_indices = [2, 1, 0] if vis == 'true_color' else [6, 2, 1]
     bands = img[:, :, band_indices] / scale_factor
     bands = bands.clip(0, 1)
@@ -20,7 +20,7 @@ def plot_optical(ax, file: Path, vis: str = 'true_color', scale_factor: float = 
 
 
 def plot_sar(ax, file: Path, vis: str = 'VV', show_title: bool = False):
-    img, _, _ = read_tif(file)
+    img, _, _ = geofiles.read_tif(file)
     band_index = 0 if vis == 'VV' else 1
     bands = img[:, :, band_index]
     bands = bands.clip(0, 1)

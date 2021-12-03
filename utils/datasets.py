@@ -152,7 +152,7 @@ class AbstractSpaceNet7Dataset(torch.utils.data.Dataset):
         self.cfg = cfg
 
         dirs = paths.load_paths()
-        self.root_path = Path(dirs.DATASET) / 'sn7'
+        self.root_path = Path(dirs.DATASET) / 'spacenet7'
 
         # getting patches
         samples_file = self.root_path / 'samples.json'

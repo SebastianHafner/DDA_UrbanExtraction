@@ -128,7 +128,7 @@ def f1_score(gts:torch.Tensor, preds:torch.Tensor, multi_threashold_mode=False, 
 def f1_score_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5):
     p = precsision_from_prob(y_prob, y_true, threshold=threshold)
     r = recall_from_prob(y_prob, y_true, threshold=threshold)
-    return 2 * (p * r) / (p + r)
+    return 2 * (p * r) / (p + r + sys.float_info.epsilon)
 
 
 def true_positives_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5):
@@ -155,7 +155,7 @@ def precsision_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: floa
 def recall_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5):
     tp = true_positives_from_prob(y_prob, y_true, threshold)
     fn = false_negatives_from_prob(y_prob, y_true, threshold)
-    return tp / (tp + fn)
+    return tp / (tp + fn + sys.float_info.epsilon)
 
 
 def root_mean_square_error(y_pred: np.ndarray, y_true: np.ndarray):

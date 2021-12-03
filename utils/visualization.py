@@ -31,16 +31,10 @@ def plot_sar(ax, file: Path, vis: str = 'VV', show_title: bool = False):
         ax.set_title(f'sar ({vis})')
 
 
-def plot_buildings(ax, file: Path, show_title: bool = False):
-    img, _, _ = read_tif(file)
-    img = img > 0
+def plot_buildings(ax, file: Path, threshold: float,  show_title: bool = False):
+    img, _, _ = geofiles.read_tif(file)
+    img = img > threshold
     img = img if len(img.shape) == 2 else img[:, :, 0]
-    cmap = colors.ListedColormap(['lightgray', 'red'])
-    boundaries = [0, 0.5, 1]
-    norm = colors.BoundaryNorm(boundaries, cmap.N, clip=True)
-    # ax.imshow(img, cmap=cmap, norm=norm)
-    # ax.imshow(img, cmap='Reds', vmin=0, vmax=1.2)
-    # ax.imshow(img, cmap='Reds')
     ax.imshow(img, cmap='gray', vmin=0, vmax=1)
     ax.set_xticks([])
     ax.set_yticks([])

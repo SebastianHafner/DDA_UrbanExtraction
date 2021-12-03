@@ -22,9 +22,8 @@ DATALOADER:
   SHUFFLE: True
   LABEL: 'buildings'
   MODE: 'fusion'
-
   SENTINEL1_BANDS: ['VV', 'VH']
-  SENTINEL2_BANDS: ['B2', 'B3', 'B4', 'B5', 'B6', 'B6', 'B8', 'B8A', 'B11', 'B12']
+  SENTINEL2_BANDS: ['B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B11', 'B12']
   AUXILIARY_INPUTS: []
   INCLUDE_UNLABELED: True
 
@@ -36,21 +35,19 @@ DATASETS:
              'quebec', 'saltlakecity', 'sandiego', 'santafe', 'seattle', 'stgeorge', 'toronto',
              'tucson', 'winnipeg']
   VALIDATION: ['calgary', 'newyork', 'sanfrancisco', 'vancouver']
-  UNLABELED: ['dakar', 'dubai', 'jakarta', 'kairo', 'kigali', 'lagos', 'mumbai',
+  UNLABELED: ['beijing', 'dakar', 'dubai', 'jakarta', 'kairo', 'kigali', 'lagos', 'mexicocity', 'mumbai',
               'riodejanairo', 'shanghai', 'buenosaires', 'bogota', 'sanjose', 'santiagodechile', 'kapstadt', 'tripoli',
               'freetown', 'london', 'madrid', 'kinshasa', 'manila', 'moscow', 'newdehli', 'nursultan', 'perth',
-              'tokio', 'maputo', 'caracas', 'santacruzdelasierra', 'saopaulo', 'asuncion',
+              'tokio', 'stockholm', 'sidney', 'maputo', 'caracas', 'santacruzdelasierra', 'saopaulo', 'asuncion',
               'lima', 'paramaribo', 'libreville', 'djibuti', 'beirut', 'baghdad', 'athens', 'islamabad', 'hanoi',
               'bangkok', 'dhaka', 'bengaluru', 'taipeh', 'berlin', 'nanning', 'wuhan', 'daressalam', 'milano',
               'zhengzhou', 'hefei', 'xian', 'seoul', 'ibadan', 'benincity', 'abidjan', 'accra', 'amsterdam', 'riyadh',
-              'amman', 'damascus', 'nouakchott', 'prague', 'sanaa', 'dahmar', 'kuwaitcity', 'tindouf', 'tehran',
-              'beijing2019', 'daressalam2019', 'jakarta2019', 'milano2019', 'mumbai2019', 'newyork2019',
-              'riodejanairo2019', 'sidney2019', 'stockholm2019', 'mexicocity2019']
+              'amman', 'damascus', 'nouakchott', 'prague', 'sanaa', 'dahmar', 'kuwaitcity', 'tindouf', 'tehran']
   TESTING: '/storage/shafner/urban_extraction/urban_dataset/sn7/'
 
 TRAINER:
   LR: 1e-4
-  BATCH_SIZE: 2
+  BATCH_SIZE: 4
   EPOCHS: 20
   OPTIMIZER: 'adamw'
 

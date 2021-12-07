@@ -1,0 +1,5 @@
+_BASE_: "fusionda_cucd.yaml"
+DEBUG: False
+
+CONSISTENCY_TRAINER:
+  LOSS_FACTOR: 0

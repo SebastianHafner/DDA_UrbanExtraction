@@ -1,0 +1,7 @@
+_BASE_: "fusionda_spacenet7.yaml"
+DEBUG: False
+INFERENCE:
+  CHECKPOINT: 15
+
+CONSISTENCY_TRAINER:
+  LOSS_FACTOR: 2

@@ -245,7 +245,7 @@ def run_quantitative_inference_sota(sota_name: str, threshold: float):
 def get_quantitative_data_sn7(config_name: str, allow_run: bool = True):
     dirs = paths.load_paths()
     data_file = Path(dirs.OUTPUT) / 'testing' / f'probabilities_{config_name}.npy'
-    if data_file.exists():
+    if not data_file.exists():
         if allow_run:
             if config_name == 'wsf2019' or config_name == 'ghs':
                 run_quantitative_inference_sota(config_name, threshold=0.2)
@@ -590,6 +590,29 @@ def plot_boxplots_spacenet7(metric: str, metric_name: str, config_names: list, n
     plt.close(fig)
 
 
+def plot_consistency_impact(config_names: list):
+    fig, axs = plt.subplots(2, 3, figsize=(16, 8))
+    for i, group_name in enumerate(GROUP_NAMES):
+        ax_i = i // 3
+        ax_j = i % 3
+        ax = axs[ax_i, ax_j]
+        cons_values, f1_scores = [], []
+        for j, config_name in enumerate(config_names):
+            data = get_quantitative_data_sn7(config_name)
+            y_prob = np.concatenate([site['y_prob'] for site in data[group_name]]).flatten()
+            y_true = np.concatenate([site['y_true'] for site in data[group_name]]).flatten()
+
+            f1 = metrics.f1_score_from_prob(y_prob, y_true, 0.5)
+            f1_scores.append(f1)
+            cfg = experiment_manager.load_cfg(config_name)
+            cons_values.append(cfg.CONSISTENCY_TRAINER.LOSS_FACTOR)
+        ax.plot(cons_values, f1_scores)
+    for _, ax in np.ndenumerate(axs):
+        ax.set_xlim((0, 2))
+        ax.set_ylim((0.4, 0.8))
+    plt.show()
+
+
 if __name__ == '__main__':
 
     config_name = 'sar'
@@ -625,10 +648,11 @@ if __name__ == '__main__':
 
     # run_quantitative_inference_sn7(config_name)
     # show_quantitative_testing_sn7('ghs', 0.2)
-    show_quantitative_testing_sn7('fusionda_spacenet7', 0.5)
+    # show_quantitative_testing_sn7('fusionda_spacenet7', 0.5)
     # plot_boxplots_spacenet7('f1_score', 'F1 score', config_names, names, 4, save_plot=True)
     # histogram_testing(['ghs', 'fusionda_spacenet7'], ['GHS-S2', 'Fusion-DA'], save_plot=True)
-
+    plot_consistency_impact(['fusionda_spacenet7_cons0', 'fusionda_spacenet7', 'fusionda_spacenet7_cons1',
+                             'fusionda_spacenet7_cons2'])
     # plot_activation_comparison_sn7(config_names, save_plots=False)
     # plot_activation_comparison_assembled_sn7(config_names, names, aoi_ids, save_plot=False)
 

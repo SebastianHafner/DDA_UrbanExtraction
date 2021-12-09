@@ -590,26 +590,39 @@ def plot_boxplots_spacenet7(metric: str, metric_name: str, config_names: list, n
     plt.close(fig)
 
 
-def plot_consistency_impact(config_names: list):
-    fig, axs = plt.subplots(2, 3, figsize=(16, 8))
+def plot_consistency_impact(config_names: list, save_plot: bool = True):
+    fig, axs = plt.subplots(2, 3, figsize=(14, 8))
+    accuracy_metrics = ['F1 score', 'Precision', 'Recall']
     for i, group_name in enumerate(GROUP_NAMES):
         ax_i = i // 3
         ax_j = i % 3
         ax = axs[ax_i, ax_j]
-        cons_values, f1_scores = [], []
+        cons_values, accuracy_values = [], [[], [], []]
         for j, config_name in enumerate(config_names):
             data = get_quantitative_data_sn7(config_name)
             y_prob = np.concatenate([site['y_prob'] for site in data[group_name]]).flatten()
             y_true = np.concatenate([site['y_true'] for site in data[group_name]]).flatten()
-
-            f1 = metrics.f1_score_from_prob(y_prob, y_true, 0.5)
-            f1_scores.append(f1)
+            accuracy_values[0].append(metrics.f1_score_from_prob(y_prob, y_true, 0.5))
+            accuracy_values[1].append(metrics.precsision_from_prob(y_prob, y_true, 0.5))
+            accuracy_values[2].append(metrics.recall_from_prob(y_prob, y_true, 0.5))
             cfg = experiment_manager.load_cfg(config_name)
             cons_values.append(cfg.CONSISTENCY_TRAINER.LOSS_FACTOR)
-        ax.plot(cons_values, f1_scores)
+        for i, metric in enumerate(accuracy_metrics):
+            if metric == 'Precision' or metric == 'Recall':
+                ax.plot(cons_values, accuracy_values[i], marker='o', ms=8, lw=2, label=metric)
+        ax.text(1.9, 0.9, group_name, fontsize=24, horizontalalignment='right', verticalalignment='top')
+        if ax_j == 0:
+            ax.set_ylabel('Accuracy', fontsize=FONTSIZE)
+        if ax_i == 1:
+            ax.set_xlabel(r'$\varphi$ (consistency impact)', fontsize=FONTSIZE)
     for _, ax in np.ndenumerate(axs):
         ax.set_xlim((0, 2))
-        ax.set_ylim((0.4, 0.8))
+        ax.set_ylim((0, 1))
+    axs[0, 0].legend(frameon=False, fontsize=FONTSIZE)
+    if save_plot:
+        dirs = paths.load_paths()
+        output_file = Path(dirs.OUTPUT) / 'plots' / f'test_consistency_impact.png'
+        plt.savefig(output_file, dpi=300, bbox_inches='tight')
     plt.show()
 
 
@@ -651,8 +664,8 @@ if __name__ == '__main__':
     # show_quantitative_testing_sn7('fusionda_spacenet7', 0.5)
     # plot_boxplots_spacenet7('f1_score', 'F1 score', config_names, names, 4, save_plot=True)
     # histogram_testing(['ghs', 'fusionda_spacenet7'], ['GHS-S2', 'Fusion-DA'], save_plot=True)
-    plot_consistency_impact(['fusionda_spacenet7_cons0', 'fusionda_spacenet7', 'fusionda_spacenet7_cons1',
-                             'fusionda_spacenet7_cons2'])
+    plot_consistency_impact(['fusionda_spacenet7_cons0', 'fusionda_spacenet7_cons025', 'fusionda_spacenet7',
+                             'fusionda_spacenet7_cons1', 'fusionda_spacenet7_cons2'])
     # plot_activation_comparison_sn7(config_names, save_plots=False)
     # plot_activation_comparison_assembled_sn7(config_names, names, aoi_ids, save_plot=False)
 

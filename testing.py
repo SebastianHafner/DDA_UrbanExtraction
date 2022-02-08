@@ -494,6 +494,7 @@ def histogram_testing(config_names: list, names: list, save_plot: bool = False):
             ax.set_ylabel('Frequency (%)', fontsize=FONTSIZE)
         if ax_i == 1:
             ax.set_xlabel('CNN output probability', fontsize=FONTSIZE)
+        group_name = 'Asia' if group_name == 'AS' else group_name
         ax.text(0.1, 0.087, group_name, fontsize=24)
         ax.yaxis.grid(True)
 
@@ -503,8 +504,6 @@ def histogram_testing(config_names: list, names: list, save_plot: bool = False):
         ax.set_xticks(xticks)
         ax.set_xticklabels(xticklabels, fontsize=FONTSIZE)
         ax.set_xlim((0, 1))
-
-
         ax.set_ylim((0, 0.1))
         yticks = np.linspace(0, 0.1, 6)
         ax.set_yticks(yticks)
@@ -571,6 +570,7 @@ def plot_boxplots_spacenet7(metric: str, metric_name: str, config_names: list, n
         ax.set_ylim((0, 1))
         if ax_j == 0:
             ax.set_ylabel(metric_name, fontsize=FONTSIZE)
+        group_name = 'Asia' if group_name == 'AS' else group_name
         ax.text(-0.2, 0.87, group_name, fontsize=24)
         ax.yaxis.grid(True)
 
@@ -610,13 +610,14 @@ def plot_consistency_impact(config_names: list, save_plot: bool = True):
         for i, metric in enumerate(accuracy_metrics):
             if metric == 'Precision' or metric == 'Recall':
                 ax.plot(cons_values, accuracy_values[i], marker='o', ms=8, lw=2, label=metric)
-        ax.text(1.9, 0.9, group_name, fontsize=24, horizontalalignment='right', verticalalignment='top')
+        group_name = 'Asia' if group_name == 'AS' else group_name
+        ax.text(0.9, 0.9, group_name, fontsize=24, horizontalalignment='right', verticalalignment='top')
         if ax_j == 0:
             ax.set_ylabel('Accuracy', fontsize=FONTSIZE)
         if ax_i == 1:
             ax.set_xlabel(r'$\varphi$ (consistency impact)', fontsize=FONTSIZE)
     for _, ax in np.ndenumerate(axs):
-        ax.set_xlim((0, 2))
+        ax.set_xlim((0, 1))
         ax.set_ylim((0, 1))
     axs[0, 0].legend(frameon=False, fontsize=FONTSIZE)
     if save_plot:
@@ -662,10 +663,10 @@ if __name__ == '__main__':
     # run_quantitative_inference_sn7(config_name)
     # show_quantitative_testing_sn7('ghs', 0.2)
     # show_quantitative_testing_sn7('fusionda_spacenet7', 0.5)
-    # plot_boxplots_spacenet7('f1_score', 'F1 score', config_names, names, 4, save_plot=True)
+    plot_boxplots_spacenet7('f1_score', 'F1 score', config_names, names, 4, save_plot=True)
     # histogram_testing(['ghs', 'fusionda_spacenet7'], ['GHS-S2', 'Fusion-DA'], save_plot=True)
-    plot_consistency_impact(['fusionda_spacenet7_cons0', 'fusionda_spacenet7_cons025', 'fusionda_spacenet7',
-                             'fusionda_spacenet7_cons1', 'fusionda_spacenet7_cons2'])
+    # plot_consistency_impact(['fusionda_spacenet7_cons0', 'fusionda_spacenet7_cons025', 'fusionda_spacenet7',
+    #                          'fusionda_spacenet7_cons075', 'fusionda_spacenet7_cons1'])
     # plot_activation_comparison_sn7(config_names, save_plots=False)
     # plot_activation_comparison_assembled_sn7(config_names, names, aoi_ids, save_plot=False)
 

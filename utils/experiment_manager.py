@@ -1,27 +1,5 @@
-import argparse
-import logging
-from argparse import ArgumentParser
-from tabulate import tabulate
-from collections import OrderedDict
-import yaml
 from fvcore.common.config import CfgNode as _CfgNode
 from pathlib import Path
-from utils import paths
-
-
-def default_argument_parser():
-
-    parser = argparse.ArgumentParser(description="Experiment Args")
-    parser.add_argument('-c', "--config-file", dest='config_file', default="", required=True, metavar="FILE",
-                        help="path to config file")
-
-    parser.add_argument(
-        "opts",
-        help="Modify config options using the command-line",
-        default=None,
-        nargs=argparse.REMAINDER,
-    )
-    return parser
 
 
 class CfgNode(_CfgNode):
@@ -89,19 +67,14 @@ def new_config():
     return C.clone()
 
 
-# loading cfg
-def load_cfg(config_name: str):
-    cfg = new_config()
-    dirs = paths.load_paths()
-    cfg_file = Path(dirs.HOME) / 'configs' / f'{config_name}.yaml'
-    cfg.merge_from_file(str(cfg_file))
-    cfg.NAME = config_name
-    return cfg
-
-
 def setup_cfg(args):
     cfg = new_config()
     cfg.merge_from_file(f'configs/{args.config_file}.yaml')
     cfg.merge_from_list(args.opts)
     cfg.NAME = args.config_file
+    cfg.PATHS.ROOT = str(Path.cwd())
+    assert (Path(args.output_dir).exists())
+    cfg.PATHS.OUTPUT = args.output_dir
+    assert (Path(args.dataset_dir).exists())
+    cfg.PATHS.DATASET = args.dataset_dir
     return cfg

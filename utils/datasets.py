@@ -4,7 +4,7 @@ from pathlib import Path
 from abc import abstractmethod
 import affine
 import numpy as np
-from utils import augmentations, geofiles, paths
+from utils import augmentations, geofiles
 
 
 class AbstractUrbanExtractionDataset(torch.utils.data.Dataset):
@@ -13,13 +13,12 @@ class AbstractUrbanExtractionDataset(torch.utils.data.Dataset):
         super().__init__()
         self.cfg = cfg
 
-        dirs = paths.load_paths()
-        self.root_path = Path(dirs.DATASET)
+        self.root_path = Path(cfg.PATHS.DATASET)
 
         # creating boolean feature vector to subset sentinel 1 and sentinel 2 bands
         s1_bands = ['VV', 'VH']
         self.s1_indices = self._get_indices(s1_bands, cfg.DATALOADER.SENTINEL1_BANDS)
-        s2_bands = ['B2', 'B3', 'B4', 'B5', 'B6', 'B6', 'B8', 'B8A', 'B11', 'B12']
+        s2_bands = ['B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B11', 'B12']
         self.s2_indices = self._get_indices(s2_bands, cfg.DATALOADER.SENTINEL2_BANDS)
 
     @abstractmethod
@@ -151,8 +150,7 @@ class AbstractSpaceNet7Dataset(torch.utils.data.Dataset):
 
         self.cfg = cfg
 
-        dirs = paths.load_paths()
-        self.root_path = Path(dirs.DATASET) / 'spacenet7'
+        self.root_path = Path(cfg.PATHS.DATASET) / 'spacenet7'
 
         # getting patches
         samples_file = self.root_path / 'samples.json'
@@ -263,8 +261,7 @@ class TilesInferenceDataset(torch.utils.data.Dataset):
         self.cfg = cfg
         self.site = site
 
-        dirs = paths.load_paths()
-        self.root_dir = Path(dirs.DATASET)
+        self.root_dir = Path(cfg.PATHS.DATASET)
         self.transform = transforms.Compose([augmentations.Numpy2Torch()])
 
         # getting all files
@@ -320,7 +317,6 @@ class TilesInferenceDataset(torch.utils.data.Dataset):
         if sample['is_labeled']:
             label, _, _ = self._get_label_data(patch_id_center)
         else:
-            # dummy_label = np.zeros((extended_patch.shape[0], extended_patch.shape[1], 1), dtype=np.float32)
             dummy_label = np.zeros((self.patch_size, self.patch_size, 1), dtype=np.float32)
             label = dummy_label
         extended_patch, label = self.transform((extended_patch, label))

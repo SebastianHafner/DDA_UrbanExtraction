@@ -13,19 +13,8 @@ def create_network(cfg):
     return DualStreamUNet(cfg) if cfg.MODEL.TYPE == 'dualstreamunet' else UNet(cfg)
 
 
-def load_network(cfg: experiment_manager.CfgNode, checkpoint: int = None):
-    net = create_network(cfg)
-    dirs = paths.load_paths()
-    checkpoint = checkpoint if checkpoint is None else cfg.INFERENCE.CHECKPOINT
-    net_file = Path(dirs.OUTPUT) / f'{cfg.NAME}_{checkpoint}.pkl'
-    state_dict = torch.load(str(net_file), map_location=lambda storage, loc: storage)
-    net.load_state_dict(state_dict)
-    return net
-
-
-def save_checkpoint(network, optimizer, epoch, step, cfg):
-    dirs = paths.load_paths()
-    save_file = Path(dirs.OUTPUT) / 'networks' / f'{cfg.NAME}_checkpoint{epoch}.pt'
+def save_checkpoint(network, optimizer, epoch: int, step: int, cfg: experiment_manager.CfgNode):
+    save_file = Path(cfg.PATHS.OUTPUT) / 'networks' / f'{cfg.NAME}_checkpoint{epoch}.pt'
     checkpoint = {
         'step': step,
         'network': network.state_dict(),
@@ -34,12 +23,12 @@ def save_checkpoint(network, optimizer, epoch, step, cfg):
     torch.save(checkpoint, save_file)
 
 
-def load_checkpoint(epoch, cfg, device):
+def load_checkpoint(epoch: int, cfg: experiment_manager.CfgNode, device):
     net = create_network(cfg)
     net.to(device)
 
     dirs = paths.load_paths()
-    save_file = Path(dirs.OUTPUT) / 'networks' / f'{cfg.NAME}_checkpoint{epoch}.pt'
+    save_file = Path(dirs.PATHS.OUTPUT) / 'networks' / f'{cfg.NAME}_checkpoint{epoch}.pt'
     checkpoint = torch.load(save_file, map_location=device)
 
     optimizer = torch.optim.AdamW(net.parameters(), lr=cfg.TRAINER.LR, weight_decay=0.01)

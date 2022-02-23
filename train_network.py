@@ -11,7 +11,7 @@ from tabulate import tabulate
 import wandb
 import numpy as np
 
-from utils import networks, datasets, loss_functions, evaluation, experiment_manager
+from utils import networks, datasets, loss_functions, evaluation, experiment_manager, parsers
 
 
 def run_training(cfg):
@@ -135,8 +135,7 @@ def run_training(cfg):
 
 
 if __name__ == '__main__':
-
-    args = experiment_manager.default_argument_parser().parse_known_args()[0]
+    args = parsers.training_argument_parser().parse_known_args()[0]
     cfg = experiment_manager.setup_cfg(args)
 
     # make training deterministic
@@ -149,13 +148,14 @@ if __name__ == '__main__':
 
     print('=== Runnning on device: p', device)
 
-    if not cfg.DEBUG:
-        wandb.init(
-            name=cfg.NAME,
-            config=cfg,
-            project='urban_extraction',
-            tags=['run', 'urban', 'extraction', 'segmentation', ],
-        )
+    wandb.init(
+        name=cfg.NAME,
+        config=cfg,
+        entity='spacenet7',
+        project=args.project,
+        tags=['run', 'urban', 'extraction', 'segmentation', ],
+        mode='online' if not cfg.DEBUG else 'disabled',
+    )
 
     try:
         run_training(cfg)

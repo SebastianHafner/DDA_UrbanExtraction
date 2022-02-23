@@ -43,21 +43,20 @@ def model_evaluation(net, cfg, device, thresholds: torch.Tensor, run_type: str, 
         specific_thresh = thresholds[specific_index]
         specific_precision = precisions[specific_index]
         specific_recall = recalls[specific_index]
-        if not cfg.DEBUG:
-            wandb.log({f'{run_type} specific F1': specific_f1,
-                       f'{run_type} specific threshold': specific_thresh,
-                       f'{run_type} specific precision': specific_precision,
-                       f'{run_type} specific recall': specific_recall,
-                       'step': step, 'epoch': epoch,
-                       })
 
-    if not cfg.DEBUG:
-        wandb.log({f'{run_type} F1': f1,
-                   f'{run_type} threshold': best_thresh,
-                   f'{run_type} precision': precision,
-                   f'{run_type} recall': recall,
+        wandb.log({f'{run_type} specific F1': specific_f1,
+                   f'{run_type} specific threshold': specific_thresh,
+                   f'{run_type} specific precision': specific_precision,
+                   f'{run_type} specific recall': specific_recall,
                    'step': step, 'epoch': epoch,
                    })
+
+    wandb.log({f'{run_type} F1': f1,
+               f'{run_type} threshold': best_thresh,
+               f'{run_type} precision': precision,
+               f'{run_type} recall': recall,
+               'step': step, 'epoch': epoch,
+               })
 
     return argmax_f1.item()
 
@@ -106,12 +105,11 @@ def model_testing(net, cfg, device, argmax, step, epoch):
 
         print(f'{group_name} F1 {f1:.3f} - Precision {prec:.3f} - Recall {rec:.3f}')
 
-        if not cfg.DEBUG:
-            wandb.log({f'{group_name} F1': f1,
-                       f'{group_name} precision': prec,
-                       f'{group_name} recall': rec,
-                       'step': step, 'epoch': epoch,
-                       })
+        wandb.log({f'{group_name} F1': f1,
+                   f'{group_name} precision': prec,
+                   f'{group_name} recall': rec,
+                   'step': step, 'epoch': epoch,
+                   })
 
     for group_index, group_name in dataset.group_names.items():
         evaluate_group(group_name)

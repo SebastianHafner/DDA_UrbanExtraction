@@ -3,7 +3,6 @@ from utils.metrics import *
 from tqdm import tqdm
 import torch
 from utils.visualization import *
-import matplotlib as mpl
 
 DATASET_PATH = Path('/storage/shafner/urban_extraction/urban_extraction_dataset')
 CONFIG_PATH = Path('/home/shafner/urban_dl/configs')
@@ -91,64 +90,6 @@ def show_quantitative_results(config_name: str, run_type: str):
     rec = recall_from_prob(y_prob, y_true, 0.5)
     print(f'total: {f1:.3f} f1 score, {prec:.3f} precision, {rec:.3f} recall')
 
-
-# TODO: this function can be the same shortened by combining it with the one for the test set
-def plot_threshold_dependency(config_names: list, run_type: str, names: list = None, show_legend: bool = False):
-    fig, axs = plt.subplots(1, 3, figsize=(15, 5))
-    fontsize = 18
-    mpl.rcParams.update({'font.size': fontsize})
-
-    # getting data and if not available produce
-    for i, config_name in enumerate(config_names):
-        data_file = ROOT_PATH / 'validation' / f'probabilities_{run_type}_{config_name}.npy'
-        if not data_file.exists():
-            run_quantitative_inference(config_name, run_type)
-        data = np.load(data_file, allow_pickle=True)
-        y_trues, y_probs = data[0, ], data[1, ]
-
-        f1_scores, precisions, recalls = [], [], []
-        thresholds = np.linspace(0, 1, 101)
-        print(config_name)
-        for thresh in tqdm(thresholds):
-            y_preds = y_probs >= thresh
-            tp = np.sum(np.logical_and(y_trues, y_preds))
-            fp = np.sum(np.logical_and(y_preds, np.logical_not(y_trues)))
-            fn = np.sum(np.logical_and(y_trues, np.logical_not(y_preds)))
-            prec = tp / (tp + fp)
-            precisions.append(prec)
-            rec = tp / (tp + fn)
-            recalls.append(rec)
-            f1 = 2 * (prec * rec) / (prec + rec)
-            f1_scores.append(f1)
-        label = config_name if names is None else names[i]
-
-        axs[0].plot(thresholds, f1_scores, label=label)
-        axs[1].plot(thresholds, precisions, label=label)
-        axs[2].plot(thresholds, recalls, label=label)
-
-    for ax, metric in zip(axs, ['F1 score', 'Precision', 'Recall']):
-        ax.set_xlim((0, 1))
-        ax.set_ylim((0, 1))
-        ax.set_xlabel('Threshold', fontsize=fontsize)
-        ax.set_ylabel(metric, fontsize=fontsize)
-        ax.set_aspect('equal', adjustable='box')
-        ticks = np.linspace(0, 1, 6)
-        tick_labels = [f'{tick:.1f}' for tick in ticks]
-        ax.set_xticks(ticks)
-        ax.set_xticklabels(tick_labels, fontsize=fontsize)
-        ax.set_yticks(ticks)
-        ax.set_yticklabels(tick_labels, fontsize=fontsize)
-        if show_legend:
-            ax.legend()
-
-    dataset_ax = axs[-1].twinx()
-    dataset_ax.set_ylabel(run_type.capitalize(), fontsize=fontsize, rotation=270, va='bottom')
-    dataset_ax.set_yticks([])
-    plot_file = ROOT_PATH / 'plots' / 'f1_curve' / f'{run_type}_{"".join(config_names)}.png'
-    plot_file.parent.mkdir(exist_ok=True)
-    plt.savefig(plot_file, dpi=300, bbox_inches='tight')
-    plt.show()
-    plt.close(fig)
 
 
 if __name__ == '__main__':

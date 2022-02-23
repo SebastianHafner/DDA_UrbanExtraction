@@ -1,12 +1,7 @@
 SEED: 7
 DEBUG: False
 LOG_FREQ: 1000
-SAVE_CHECKPOINTS: [5, 10, 15, 20]
-INFERENCE:
-  CHECKPOINT: 15
-  THRESHOLDS:
-    TRAIN: 0.0
-    VALIDATION: 0.0
+INFERENCE_CHECKPOINT: 15
 
 MODEL:
   TYPE: 'dualstreamunet'
@@ -23,7 +18,7 @@ DATALOADER:
   LABEL: 'buildings'
   MODE: 'fusion'
   SENTINEL1_BANDS: ['VV', 'VH']
-  SENTINEL2_BANDS: ['B2', 'B3', 'B4', 'B5', 'B6', 'B6', 'B8', 'B8A', 'B11', 'B12']
+  SENTINEL2_BANDS: ['B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B11', 'B12']
   AUXILIARY_INPUTS: []
   INCLUDE_UNLABELED: True
 
@@ -43,7 +38,6 @@ DATASETS:
               'bangkok', 'dhaka', 'bengaluru', 'taipeh', 'berlin', 'nanning', 'wuhan', 'daressalam', 'milano',
               'zhengzhou', 'hefei', 'xian', 'seoul', 'ibadan', 'benincity', 'abidjan', 'accra', 'amsterdam', 'riyadh',
               'amman', 'damascus', 'nouakchott', 'prague', 'sanaa', 'dahmar', 'kuwaitcity', 'tindouf', 'tehran']
-  TESTING: '/storage/shafner/urban_extraction/urban_dataset/sn7/'
 
 TRAINER:
   LR: 1e-4

@@ -1,6 +1,5 @@
 _BASE_: "base.yaml"
 DEBUG: False
-INFERENCE_CHECKPOINT: 15
 
 MODEL:
   IN_CHANNELS: 2

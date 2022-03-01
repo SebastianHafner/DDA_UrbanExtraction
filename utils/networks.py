@@ -6,7 +6,7 @@ from collections import OrderedDict
 
 from pathlib import Path
 
-from utils import paths, experiment_manager
+from utils import experiment_manager
 
 
 def create_network(cfg):

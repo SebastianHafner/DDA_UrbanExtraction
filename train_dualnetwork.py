@@ -57,9 +57,6 @@ def run_training(cfg):
     # tracking variables
     global_step = epoch_float = 0
 
-    # for logging
-    thresholds = torch.linspace(0, 1, 101)
-
     for epoch in range(1, epochs + 1):
         print(f'Starting epoch {epoch}/{epochs}.')
 
@@ -127,10 +124,8 @@ def run_training(cfg):
                 print(f'Logging step {global_step} (epoch {epoch_float:.2f}).')
 
                 # evaluation on sample of training and validation set
-                train_argmaxF1 = evaluation.model_evaluation(net, cfg, device, thresholds, 'training', epoch_float,
-                                                             global_step, max_samples=1_000)
-                _ = evaluation.model_evaluation(net, cfg, device, thresholds, 'validation', epoch_float,
-                                                global_step, specific_index=train_argmaxF1, max_samples=1_000)
+                evaluation.model_evaluation(net, cfg, device, 'training', epoch_float, global_step, max_samples=1_000)
+                evaluation.model_evaluation(net, cfg, device, 'validation', epoch_float, global_step, max_samples=1_000)
 
                 # logging
                 time = timeit.default_timer() - start
@@ -158,23 +153,15 @@ def run_training(cfg):
 
         if not cfg.DEBUG:
             assert (epoch == epoch_float)
+        evaluation.model_testing(net, cfg, device, global_step, epoch_float)
+
         if epoch in save_checkpoints and not cfg.DEBUG:
             print(f'saving network', flush=True)
             networks.save_checkpoint(net, optimizer, epoch, global_step, cfg)
 
             # logs to load network
-            train_argmaxF1 = evaluation.model_evaluation(net, cfg, device, thresholds, 'training', epoch_float,
-                                                         global_step)
-            validation_argmaxF1 =evaluation.model_evaluation(net, cfg, device, thresholds, 'validation', epoch_float,
-                                                             global_step, specific_index=train_argmaxF1)
-            wandb.log({
-                'net_checkpoint': epoch,
-                'checkpoint_step': global_step,
-                'train_threshold': train_argmaxF1 / 100,
-                'validation_threshold': validation_argmaxF1 / 100
-            })
-            if cfg.DATASETS.TESTING is not None:
-                evaluation.model_testing(net, cfg, device, 50, global_step, epoch_float)
+            evaluation.model_evaluation(net, cfg, device, 'training', epoch_float, global_step)
+            evaluation.model_evaluation(net, cfg, device, 'validation', epoch_float, global_step)
 
 
 if __name__ == '__main__':

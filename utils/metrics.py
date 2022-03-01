@@ -3,17 +3,6 @@ import numpy as np
 import sys
 
 
-def progress(count, total, status=''):
-    bar_len = 60
-    filled_len = int(round(bar_len * count / float(total)))
-
-    percents = round(100.0 * count / float(total), 1)
-    bar = '=' * filled_len + '-' * (bar_len - filled_len)
-
-    sys.stdout.write('[%s] %s%s ...%s\r' % (bar, percents, '%', status))
-    sys.stdout.flush()  # As suggested by Rom Ruben (see: http://stackoverflow.com/questions/3173320/text-progress-bar-in-the-console/27871113#comment50529068_27871113)
-
-
 class MultiThresholdMetric(object):
     def __init__(self, threshold):
 
@@ -24,13 +13,6 @@ class MultiThresholdMetric(object):
         self.TN = 0
         self.FP = 0
         self.FN = 0
-
-    def _normalize_dimensions(self):
-        ''' Converts y_truth, y_label and threshold to [B, Thres, C, H, W]'''
-        # Naively assume that all of existing shapes of tensors, we transform [B, H, W] -> [B, Thresh, C, H, W]
-        self._thresholds = self._thresholds[ :, None, None, None, None] # [Tresh, B, C, H, W]
-        # self._y_pred = self._y_pred[None, ...]  # [B, Thresh, C, ...]
-        # self._y_true = self._y_true[None,:, None, ...] # [Thresh, B,  C, ...]
 
     def add_sample(self, y_true: torch.Tensor, y_pred: torch.Tensor):
         y_true = y_true.bool()[None,...] # [Thresh, B,  C, ...]
@@ -156,6 +138,18 @@ def recall_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 
     tp = true_positives_from_prob(y_prob, y_true, threshold)
     fn = false_negatives_from_prob(y_prob, y_true, threshold)
     return tp / (tp + fn + sys.float_info.epsilon)
+
+
+def iou_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5):
+    tp = true_positives_from_prob(y_prob, y_true, threshold)
+    fp = false_positives_from_prob(y_prob, y_true, threshold)
+    fn = false_negatives_from_prob(y_prob, y_true, threshold)
+    return tp / (tp + fp + fn)
+
+
+# TODO: implement
+def kappa_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5):
+    pass
 
 
 def root_mean_square_error(y_pred: np.ndarray, y_true: np.ndarray):

@@ -6,8 +6,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
-from utils import metrics, geofiles, experiment_manager, networks, datasets, paths, visualization
-from sklearn.metrics import precision_recall_curve
+from utils import metrics, geofiles, experiment_manager, networks, datasets, visualization
 
 FONTSIZE = 18
 mpl.rcParams.update({'font.size': FONTSIZE})
@@ -19,8 +18,6 @@ def spacenet7_aoi_ids() -> list:
     metadata = geofiles.load_json(file)
     aoi_ids = [s['aoi_id'] for s in metadata['samples']]
     return sorted(aoi_ids)
-
-
 
 
 def run_quantitative_evaluation(config_name: str, site: str, threshold: float = None, save_output: bool = False):
@@ -477,28 +474,3 @@ if __name__ == '__main__':
     # plot_precision_recall_curve_sn7(config_names, names, save_plot=False)
     # plot_threshold_dependency(config_names, names)
 
-    complete = ['calgary', 'newyork', 'sanfrancisco', 'vancouver', 'beijing', 'dakar', 'dubai', 'jakarta', 'kairo',
-                'kigali', 'lagos', 'mexicocity', 'mumbai', 'riodejanairo', 'shanghai', 'buenosaires', 'bogota',
-                'sanjose', 'santiagodechile', 'kapstadt', 'tripoli', 'freetown', 'london', 'madrid', 'kinshasa',
-                'manila', 'moscow', 'newdehli', 'nursultan', 'perth', 'tokio', 'stockholm', 'sidney', 'maputo',
-                'caracas', 'santacruzdelasierra', 'saopaulo', 'asuncion', 'lima', 'paramaribo', 'libreville',
-                'djibuti', 'beirut', 'baghdad', 'athens', 'islamabad', 'hanoi', 'bangkok', 'dhaka', 'bengaluru',
-                'taipeh', 'berlin', 'nanning', 'wuhan', 'daressalam', 'milano', 'zhengzhou', 'hefei', 'xian', 'seoul',
-                'ibadan', 'benincity', 'abidjan', 'accra', 'amsterdam', 'riyadh', 'amman', 'damascus', 'nouakchott',
-                'prague', 'sanaa', 'dahmar', 'kuwaitcity', 'tindouf', 'tehran']
-
-
-    cities = ['calgary', 'newyork', 'sanfrancisco', 'vancouver', 'beijing', 'dakar', 'dubai', 'jakarta', 'kairo',
-              'kigali', 'lagos', 'mexicocity', 'mumbai', 'riodejanairo', 'shanghai', 'buenosaires', 'bogota',
-              'sanjose', 'santiagodechile', 'kapstadt', 'tripoli', 'freetown', 'london', 'madrid', 'kinshasa',
-              'manila', 'moscow', 'newdehli', 'nursultan', 'perth', 'tokio', 'stockholm', 'sidney', 'maputo',
-              'caracas', 'santacruzdelasierra', 'saopaulo', 'asuncion', 'lima', 'paramaribo', 'libreville', 'djibuti',
-              'beirut', 'baghdad', 'athens', 'islamabad', 'hanoi', 'bangkok', 'dhaka', 'bengaluru', 'taipeh', 'berlin',
-              'nanning', 'wuhan', 'daressalam', 'milano']
-
-    new_cities = ['beijing2019', 'kairo2019', 'charlston2019', 'detroit2019', 'dubai2019', 'guangzhou2019',
-                  'heidelberg2019', 'kigali2019', 'lapaz2019', 'lagos2019', 'nairobi2019', 'nouakchott2019',
-                  'shanghai2019', 'daressalam2019', 'jakarta2019', 'milano2019', 'mumbai2019', 'newyork2019',
-                  'riodejanairo2019', 'sidney2019', 'stockholm2019', 'mexicocity2019']
-
-    # run_inference('fusionda', 'mexicocity2019')

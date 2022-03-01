@@ -62,12 +62,12 @@ class UrbanExtractionDataset(AbstractUrbanExtractionDataset):
 
         self.dataset = dataset
         if dataset == 'training':
-            self.sites = list(cfg.DATASETS.TRAINING)
+            self.sites = list(cfg.DATASET.TRAINING)
             # using parameter include_unlabeled to overwrite config
             if include_unlabeled and cfg.DATALOADER.INCLUDE_UNLABELED:
-                self.sites += cfg.DATASETS.UNLABELED
+                self.sites += cfg.DATASET.UNLABELED
         elif dataset == 'validation':
-            self.sites = list(cfg.DATASETS.VALIDATION)
+            self.sites = list(cfg.DATASET.VALIDATION)
         else:  # used to load only 1 city passed as dataset
             self.sites = [dataset]
 
@@ -83,12 +83,45 @@ class UrbanExtractionDataset(AbstractUrbanExtractionDataset):
             metadata = geofiles.load_json(samples_file)
             samples = metadata['samples']
             # making sure unlabeled data is not used as labeled when labels exist
-            if include_unlabeled and site in cfg.DATASETS.UNLABELED:
+            if include_unlabeled and site in cfg.DATASET.UNLABELED:
                 for sample in samples:
                     sample['is_labeled'] = False
             self.samples += samples
+        for sample in self.samples:
+            sample['dataset'] = 'urban_dataset'
+
+        # include samples from spacenet7 s1s2
+        self.spacenet7s1s2_dataset_path = self.root_path.parent / 'multimodal_cd_dataset'
+        if include_unlabeled and cfg.DATASET.INCLUDE_SPACENET7:
+            assert(self.spacenet7s1s2_dataset_path.exists())
+            metadata_file_spacenet7s1s2 = self.spacenet7s1s2_dataset_path / 'metadata.json'
+            metadata_spacenet7s1s2 = geofiles.load_json(metadata_file_spacenet7s1s2)
+            for aoi_id in metadata_spacenet7s1s2.keys():
+                aoi_timestamps = metadata_spacenet7s1s2[aoi_id]
+                for ts in aoi_timestamps:
+                    year, month, s1, s2 = ts['year'], ts['month'], ts['s1'], ts['s2']
+                    if cfg.DATALOADER.MODE == 'optical' and s2:
+                        add_to_samples = True
+                    elif cfg.DATALOADER.MODE == 'sar' and s1:
+                        add_to_samples = True
+                    elif cfg.DATALOADER.MODE == 'fusion' and (s1 and s2):
+                        add_to_samples = True
+                    else:
+                        add_to_samples = False
+                    if add_to_samples:
+                        sample = {
+                            'dataset': 'spacenet7s1s2',
+                            'aoi_id': aoi_id,
+                            'year': year,
+                            'month': month,
+                            'is_labeled': False,
+                        }
+                        self.samples.append(sample)
+
         self.length = len(self.samples)
         self.n_labeled = len([s for s in self.samples if s['is_labeled']])
+
+        self.crop_size = cfg.AUGMENTATION.CROP_SIZE
 
         self.include_projection = include_projection
 
@@ -96,37 +129,49 @@ class UrbanExtractionDataset(AbstractUrbanExtractionDataset):
 
         # loading metadata of sample
         sample = self.samples[index]
-
-        site = sample['site']
-        patch_id = sample['patch_id']
         is_labeled = sample['is_labeled']
-
-        # loading images
+        dataset = sample['dataset']
+        patch_id = sample['patch_id'] if dataset == 'urban_dataset' else '-'
+        site = sample['site'] if dataset == 'urban_dataset' else sample['aoi_id']
+        img_weight = np.float(sample['img_weight']) if dataset == 'urban_dataset' else np.float(0)
         mode = self.cfg.DATALOADER.MODE
-        if mode == 'optical':
-            img, geotransform, crs = self._get_sentinel2_data(site, patch_id)
-        elif mode == 'sar':
-            img, geotransform, crs = self._get_sentinel1_data(site, patch_id)
-        else:  # fusion baby!!!
-            s1_img, geotransform, crs = self._get_sentinel1_data(site, patch_id)
-            s2_img, _, _ = self._get_sentinel2_data(site, patch_id)
-            img = np.concatenate([s1_img, s2_img], axis=-1)
 
-        # create dummy label if unlabeled
-        if is_labeled:
-            label, _, _ = self._get_label_data(site, patch_id)
+        if dataset == 'urban_dataset':
+            if mode == 'optical':
+                img, geotransform, crs = self._get_sentinel2_data(site, patch_id)
+            elif mode == 'sar':
+                img, geotransform, crs = self._get_sentinel1_data(site, patch_id)
+            else:
+                s1_img, geotransform, crs = self._get_sentinel1_data(site, patch_id)
+                s2_img, _, _ = self._get_sentinel2_data(site, patch_id)
+                img = np.concatenate([s1_img, s2_img], axis=-1)
+            if is_labeled:
+                label, _, _ = self._get_label_data(site, patch_id)
+            else:
+                label = np.zeros((self.crop_size, self.crop_size, 1), dtype=np.float32)
+
         else:
-            label = np.zeros((img.shape[0], img.shape[1], 1), dtype=np.float32)
+            year, month = sample['year'], sample['month']
+            if mode == 'optical':
+                img, geotransform, crs = self._get_spacenet7s1s2_data('sentinel2', site, year, month)
+            elif mode == 'sar':
+                img, geotransform, crs = self._get_spacenet7s1s2_data('sentinel1', site, year, month)
+            else:
+                s1_img, geotransform, crs = self._get_spacenet7s1s2_data('sentinel1', site, year, month)
+                s2_img, _, _ = img, geotransform, crs = self._get_spacenet7s1s2_data('sentinel2', site, year, month)
+                img = np.concatenate([s1_img, s2_img], axis=-1)
+
+            # cropping spacenet7 image
+            label = np.zeros((self.crop_size, self.crop_size, 1), dtype=np.float32)
 
         img, label = self.transform((img, label))
-
         item = {
             'x': img,
             'y': label,
             'site': site,
             'patch_id': patch_id,
             'is_labeled': sample['is_labeled'],
-            'image_weight': np.float(sample['img_weight']),
+            'image_weight': img_weight,
         }
 
         if self.include_projection:
@@ -134,6 +179,14 @@ class UrbanExtractionDataset(AbstractUrbanExtractionDataset):
             item['crs'] = crs
 
         return item
+
+    def _get_spacenet7s1s2_data(self, sensor: str, aoi_id: str, year: int, month: int):
+        fname = f'{sensor}_{aoi_id}_{year}_{month:02d}.tif'
+        file = self.spacenet7s1s2_dataset_path / aoi_id / sensor / fname
+        img, transform, crs = geofiles.read_tif(file)
+        band_indices = self.s1_indices if sensor == 'sentinel1' else self.s2_indices
+        img = img[:, :, band_indices]
+        return np.nan_to_num(img).astype(np.float32), transform, crs
 
     def __len__(self):
         return self.length
@@ -156,14 +209,17 @@ class AbstractSpaceNet7Dataset(torch.utils.data.Dataset):
         samples_file = self.root_path / 'samples.json'
         metadata = geofiles.load_json(samples_file)
         self.samples = metadata['samples']
-        self.group_names = metadata['group_names']
         self.length = len(self.samples)
-        s1_bands = metadata['sentinel1_features']
-        s2_bands = metadata['sentinel2_features']
+
+        # getting regional information
+        regions_file = self.root_path / 'spacenet7_regions.json'
+        self.regions = geofiles.load_json(regions_file)
 
         self.transform = transforms.Compose([augmentations.Numpy2Torch()])
 
         # creating boolean feature vector to subset sentinel 1 and sentinel 2 bands
+        s1_bands = metadata['sentinel1_features']
+        s2_bands = metadata['sentinel2_features']
         self.s1_indices = self._get_indices(s1_bands, cfg.DATALOADER.SENTINEL1_BANDS)
         self.s2_indices = self._get_indices(s2_bands, cfg.DATALOADER.SENTINEL2_BANDS)
 
@@ -190,11 +246,17 @@ class AbstractSpaceNet7Dataset(torch.utils.data.Dataset):
         img = img > 0
         return np.nan_to_num(img).astype(np.float32), transform, crs
 
-
     def get_index(self, aoi_id: str):
         for i, sample in enumerate(self.samples):
             if sample['aoi_id'] == aoi_id:
                 return i
+
+    def _get_region_index(self, aoi_id: str) -> int:
+        return self.regions['data'][aoi_id]
+
+    def get_region_name(self, aoi_id: str) -> str:
+        index = self._get_region_index(aoi_id)
+        return self.regions['regions'][str(index)]
 
     @staticmethod
     def _get_indices(bands, selection):
@@ -218,8 +280,6 @@ class SpaceNet7Dataset(AbstractSpaceNet7Dataset):
         # loading metadata of sample
         sample = self.samples[index]
         aoi_id = sample['aoi_id']
-        group = sample['group']
-        group_name = self.group_names[str(group)]
 
         # loading images
         mode = self.cfg.DATALOADER.MODE
@@ -241,10 +301,7 @@ class SpaceNet7Dataset(AbstractSpaceNet7Dataset):
             'y': label,
             'aoi_id': aoi_id,
             'country': sample['country'],
-            'group': group,
-            'group_name': group_name,
-            'year': sample['year'],
-            'month': sample['month'],
+            'region': self.get_region_name(aoi_id),
             'transform': geotransform,
             'crs': crs
         }

@@ -6,6 +6,9 @@ import numpy as np
 def compose_transformations(cfg):
     transformations = []
 
+    if cfg.AUGMENTATION.CROP_SIZE:
+        transformations.append(ImageCrop(cfg.AUGMENTATION.CROP_SIZE))
+
     if cfg.AUGMENTATION.RANDOM_FLIP:
         transformations.append(RandomFlip())
 
@@ -92,7 +95,8 @@ class ImageCrop(object):
     def __call__(self, args):
         img, label = args
         m, n, _ = img.shape
-        i, j = np.random.randint(0, m - self.crop_size), np.random.randint(0, n - self.crop_size)
+        i = 0 if m == self.crop_size else np.random.randint(0, m - self.crop_size)
+        j = 0 if n == self.crop_size else np.random.randint(0, n - self.crop_size)
         img_crop = img[i:i + self.crop_size, j:j + self.crop_size, ]
         label_crop = label[i:i + self.crop_size, j:j + self.crop_size, ]
         return img_crop, label_crop

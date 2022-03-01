@@ -1,7 +1,7 @@
 SEED: 7
 DEBUG: True
-LOG_FREQ: 1000
-SAVE_CHECKPOINTS: [5, 10, 15, 20]
+LOG_FREQ: 100
+SAVE_CHECKPOINTS: [10, 15, 20]
 INFERENCE_CHECKPOINT: 15
 
 TRAINER:
@@ -21,12 +21,10 @@ MODEL:
   OUT_CHANNELS: 1
   IN_CHANNELS: 12
   LOSS_TYPE: 'PowerJaccardLoss'
-  POSITIVE_WEIGHT: 250
-  NEGATIVE_WEIGHT: 1
   TOPOLOGY: [64, 128,]
 
 DATALOADER:
-  NUM_WORKER: 8
+  NUM_WORKER: 2
   SHUFFLE: True
   LABEL: 'buildings'
   LABEL_THRESH: 0.0
@@ -37,25 +35,27 @@ DATALOADER:
   INCLUDE_UNLABELED: False
 
 AUGMENTATION:
-  IMAGE_OVERSAMPLING_TYPE: 'none' # [none, simple]
+  CROP_SIZE: 256
   RANDOM_FLIP: True
   RANDOM_ROTATE: True
   COLOR_SHIFT: False
   GAMMA_CORRECTION: True
 
-DATASETS:
-  PATH: '/storage/shafner/urban_extraction/urban_dataset/'
-  TRAINING: ['albuquerque', 'atlanta', 'charlston', 'columbus', 'dallas', 'denver', 'elpaso', 'houston',
+DATASET:
+  TRAINING: ['albuquerque', 'atlantaeast', 'atlantawest', 'charlston', 'columbus', 'dallas', 'denver', 'elpaso', 'houston',
              'kansascity', 'lasvegas', 'losangeles', 'miami', 'minneapolis', 'montreal', 'phoenix',
              'quebec', 'saltlakecity', 'sandiego', 'santafe', 'seattle', 'stgeorge', 'toronto',
              'tucson', 'winnipeg']
   VALIDATION: ['calgary', 'newyork', 'sanfrancisco', 'vancouver']
-  UNLABELED: ['beijing', 'dakar', 'dubai', 'jakarta', 'kairo', 'kigali', 'lagos', 'mexicocity', 'mumbai',
+  UNLABELED: ['beijing', 'dubai', 'jakarta', 'kairo', 'kigali', 'lagos', 'mexicocity', 'mumbai',
               'riodejanairo', 'shanghai', 'buenosaires', 'bogota', 'sanjose', 'santiagodechile', 'kapstadt', 'tripoli',
               'freetown', 'london', 'madrid', 'kinshasa', 'manila', 'moscow', 'newdehli', 'nursultan', 'perth',
               'tokio', 'stockholm', 'sidney', 'maputo', 'caracas', 'santacruzdelasierra', 'saopaulo', 'asuncion',
               'lima', 'paramaribo', 'libreville', 'djibuti', 'beirut', 'baghdad', 'athens', 'islamabad', 'hanoi',
-              'bangkok', 'dhaka', 'bengaluru', 'taipeh', 'berlin', 'nanning', 'wuhan', 'daressalam', 'milano']
+              'bangkok', 'dhaka', 'bengaluru', 'taipeh', 'berlin', 'nanning', 'wuhan', 'daressalam', 'milano',
+              'zhengzhou', 'hefei', 'xian', 'seoul', 'ibadan', 'benincity', 'abidjan', 'accra', 'amsterdam', 'riyadh',
+              'amman', 'damascus', 'nouakchott', 'prague', 'sanaa', 'kuwaitcity', 'tehran']
+  INCLUDE_SPACENET7: False
 
 
 

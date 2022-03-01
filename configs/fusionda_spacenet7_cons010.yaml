@@ -1,7 +1,7 @@
 _BASE_: "fusionda_base.yaml"
 
 CONSISTENCY_TRAINER:
-  LOSS_FACTOR: 0.25
+  LOSS_FACTOR: 0.1
 
 DATASET:
   INCLUDE_SPACENET7: True

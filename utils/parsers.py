@@ -52,3 +52,22 @@ def inference_argument_parser():
         nargs=argparse.REMAINDER,
     )
     return parser
+
+
+def inspector_argument_parser():
+    # https://docs.python.org/3/library/argparse.html#the-add-argument-method
+    parser = argparse.ArgumentParser(description="Experiment Args")
+    parser.add_argument('-s' "--sites", nargs="+", dest='sites', required=True, help="sites")
+    parser.add_argument('-p', "--product", dest='product', required=True,
+                        help="product (sentinel1, sentinel2, buildings)")
+    parser.add_argument('-o', "--output-dir", dest='output_dir', required=True, help="path to output directory")
+    parser.add_argument('-d', "--dataset-dir", dest='dataset_dir', default="", required=True,
+                        help="path to output directory")
+
+    parser.add_argument(
+        "opts",
+        help="Modify config options using the command-line",
+        default=None,
+        nargs=argparse.REMAINDER,
+    )
+    return parser

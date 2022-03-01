@@ -34,11 +34,11 @@ def crop_patch(file: Path, patch_size: int):
         pass
 
 
-def preprocess(path: Path, site: str, labels_exist: bool, patch_size: int = 256):
+def preprocess(path: str, site: str, labels_exist: bool, patch_size: int = 256):
 
     print(f'preprocessing {site}')
 
-    s1_path = path / site / 'sentinel1'
+    s1_path = Path(path) / site / 'sentinel1'
     patches = [f.stem.split('_')[-1] for f in s1_path.glob('**/*')]
 
     max_x, max_y = 0, 0
@@ -46,11 +46,11 @@ def preprocess(path: Path, site: str, labels_exist: bool, patch_size: int = 256)
     samples = []
     for i, patch_id in enumerate(tqdm(patches)):
 
-        sentinel1_file = path / site / 'sentinel1' / f'sentinel1_{site}_{patch_id}.tif'
-        sentinel2_file = path / site / 'sentinel2' / f'sentinel2_{site}_{patch_id}.tif'
+        sentinel1_file = Path(path) / site / 'sentinel1' / f'sentinel1_{site}_{patch_id}.tif'
+        sentinel2_file = Path(path) / site / 'sentinel2' / f'sentinel2_{site}_{patch_id}.tif'
         files = [sentinel1_file, sentinel2_file]
         if labels_exist:
-            buildings_file = path / site / 'buildings' / f'buildings_{site}_{patch_id}.tif'
+            buildings_file = Path(path) / site / 'buildings' / f'buildings_{site}_{patch_id}.tif'
             files.append(buildings_file)
             img_weight = get_image_weight(buildings_file)
         else:
@@ -92,16 +92,15 @@ def preprocess(path: Path, site: str, labels_exist: bool, patch_size: int = 256)
         'sentinel2_features': ['B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B11', 'B12'],
         'samples': samples
     }
-    dataset_file = path / site / f'samples.json'
+    dataset_file = Path(path) / site / f'samples.json'
     with open(str(dataset_file), 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
 
 if __name__ == '__main__':
-    args = parsers.training_argument_parser().parse_known_args()[0]
+    args = parsers.preprocessing_argument_parser().parse_known_args()[0]
 
-    dataset_path = Path('C:/Users/shafner/datasets/urban_dataset')
     for site, labeled in zip(args.sites, args.labeled):
-        preprocess(args.dataset_path, site, labels_exist=True if labeled == 'True' else False, patch_size=256)
+        preprocess(args.dataset_dir, site, labels_exist=True if labeled == 'True' else False, patch_size=256)
 
 

@@ -64,6 +64,9 @@ def new_config():
     C.MODEL.IN_CHANNELS = 3
 
     C.MAX_EPOCHS = 1
+
+    C.PATHS = CfgNode()
+
     return C.clone()
 
 
@@ -72,7 +75,6 @@ def setup_cfg(args):
     cfg.merge_from_file(f'configs/{args.config_file}.yaml')
     cfg.merge_from_list(args.opts)
     cfg.NAME = args.config_file
-    cfg.PATHS.ROOT = str(Path.cwd())
     assert (Path(args.output_dir).exists())
     cfg.PATHS.OUTPUT = args.output_dir
     assert (Path(args.dataset_dir).exists())

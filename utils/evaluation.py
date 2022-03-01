@@ -107,7 +107,7 @@ def model_testing(net, cfg, device, step, epoch):
                    'step': step, 'epoch': epoch,
                    })
 
-    for region in dataset.regions.values():
+    for region in dataset.regions['regions'].values():
         evaluate_region(region)
     evaluate_region('total')
 

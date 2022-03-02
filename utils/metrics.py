@@ -108,7 +108,7 @@ def f1_score(gts:torch.Tensor, preds:torch.Tensor, multi_threashold_mode=False, 
 
 
 def f1_score_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5):
-    p = precsision_from_prob(y_prob, y_true, threshold=threshold)
+    p = precision_from_prob(y_prob, y_true, threshold=threshold)
     r = recall_from_prob(y_prob, y_true, threshold=threshold)
     return 2 * (p * r) / (p + r + sys.float_info.epsilon)
 
@@ -128,7 +128,7 @@ def false_negatives_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold:
     return np.sum(np.logical_and(np.logical_not(y_pred), y_true))
 
 
-def precsision_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5):
+def precision_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5):
     tp = true_positives_from_prob(y_prob, y_true, threshold)
     fp = false_positives_from_prob(y_prob, y_true, threshold)
     return tp / (tp + fp)

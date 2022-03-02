@@ -31,9 +31,10 @@ def plot_sar(ax, file: Path, vis: str = 'VV', show_title: bool = False):
         ax.set_title(f'sar ({vis})')
 
 
-def plot_buildings(ax, file: Path, threshold: float,  show_title: bool = False):
+def plot_buildings(ax, file: Path, threshold: float = None,  show_title: bool = False):
     img, _, _ = geofiles.read_tif(file)
-    img = img > threshold
+    if threshold is not None:
+        img = img > threshold
     img = img if len(img.shape) == 2 else img[:, :, 0]
     ax.imshow(img, cmap='gray', vmin=0, vmax=1)
     ax.set_xticks([])

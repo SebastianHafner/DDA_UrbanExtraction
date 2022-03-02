@@ -20,7 +20,7 @@ def get_region_names(dataset_path: str) -> list:
     file = Path(dataset_path) / 'spacenet7' / 'spacenet7_regions.json'
     metadata_regions = geofiles.load_json(file)
     n_regions = len(metadata_regions['regions'].keys())
-    region_names = [metadata_regions['regions'][str(i)] for  i in range(n_regions)]
+    region_names = [metadata_regions['regions'][str(i)] for i in range(n_regions)]
     return region_names
 
 
@@ -32,7 +32,7 @@ def get_quantitative_data(output_path: str, config_name: str):
     return data
 
 
-def qualitative_testing(cfg: experiment_manager.CfgNode):
+def qualitative_sota_comparison(cfg: experiment_manager.CfgNode):
     dataset_path = cfg.PATHS.DATASET
     aoi_ids = get_spacenet7_aoi_ids(dataset_path)
     for aoi_id in aoi_ids:
@@ -85,7 +85,53 @@ def qualitative_testing(cfg: experiment_manager.CfgNode):
         plt.close(fig)
 
 
-def histogram_ghs_comparison(cfg: experiment_manager.CfgNode):
+def qualitative_results(cfg: experiment_manager.CfgNode):
+    dataset_path = cfg.PATHS.DATASET
+    aoi_ids = get_spacenet7_aoi_ids(dataset_path)
+    for aoi_id in aoi_ids:
+        fig, axs = plt.subplots(1, 5, figsize=(20, 4))
+        for _, ax in np.ndenumerate(axs):
+            ax.set_xticks([])
+            ax.set_yticks([])
+
+        ax_sar = axs[0]
+        sar_file = Path(dataset_path) / 'spacenet7' / 'sentinel1' / f'sentinel1_{aoi_id}.tif'
+        visualization.plot_sar(ax_sar, sar_file)
+        ax_sar.set_xlabel(f'(a) SAR (VV)', fontsize=FONTSIZE)
+        ax_sar.xaxis.set_label_coords(0.5, -0.025)
+
+        ax_opt = axs[1]
+        opt_file = Path(dataset_path) / 'spacenet7' / 'sentinel2' / f'sentinel2_{aoi_id}.tif'
+        visualization.plot_optical(ax_opt, opt_file)
+        ax_opt.set_xlabel(f'(b) Optical (True Color)', fontsize=FONTSIZE)
+        ax_opt.xaxis.set_label_coords(0.5, -0.025)
+
+        ax_sn7 = axs[2]
+        sn7_file = Path(dataset_path) / 'spacenet7' / 'buildings' / f'buildings_{aoi_id}.tif'
+        visualization.plot_buildings(ax_sn7, sn7_file, 0)
+        ax_sn7.set_xlabel(f'(c) Ground Truth', fontsize=FONTSIZE)
+        ax_sn7.xaxis.set_label_coords(0.5, -0.025)
+
+        ax_ours = axs[3]
+        ours_file = Path(dataset_path) / 'spacenet7' / cfg.NAME / f'{cfg.NAME}_{aoi_id}.tif'
+        visualization.plot_buildings(ax_ours, ours_file, 0.5)
+        ax_ours.set_xlabel(f'(d) Ours Pred', fontsize=FONTSIZE)
+        ax_ours.xaxis.set_label_coords(0.5, -0.025)
+
+        ax_ours = axs[4]
+        visualization.plot_buildings(ax_ours, ours_file, None)
+        ax_ours.set_xlabel(f'(d) Ours Prob', fontsize=FONTSIZE)
+        ax_ours.xaxis.set_label_coords(0.5, -0.025)
+
+        plt.tight_layout()
+        folder = Path(cfg.PATHS.OUTPUT) / 'plots' / 'qualitative_results' / cfg.NAME
+        folder.mkdir(exist_ok=True)
+        plot_file = folder / f'qualitative_comparison_{aoi_id}.png'
+        plt.savefig(plot_file, dpi=300, bbox_inches='tight')
+        plt.close(fig)
+
+
+def regional_ghs_comparison_histograms(cfg: experiment_manager.CfgNode):
     fig, axs = plt.subplots(2, 3, figsize=(16, 10))
     region_names = get_region_names(cfg.PATHS.DATASET)
     for i, region in enumerate(region_names):
@@ -94,13 +140,13 @@ def histogram_ghs_comparison(cfg: experiment_manager.CfgNode):
         ax = axs[ax_i, ax_j]
 
         # ours (cfg)
-        data = get_quantitative_data(cfg.NAME)
+        data = get_quantitative_data(cfg.PATHS.OUTPUT, cfg.NAME)
         y_prob = np.concatenate([site['y_prob'] for site in data[region]]).flatten()
         weights = np.ones_like(y_prob) / len(y_prob)
         ax.hist(y_prob, weights=weights, bins=25, alpha=0.6, label='Fusion-DA')
 
         # ghs
-        data = get_quantitative_data('ghs')
+        data = get_quantitative_data(cfg.PATHS.OUTPUT, 'ghs')
         y_prob = np.concatenate([site['y_prob'] for site in data[region]]).flatten()
         weights = np.ones_like(y_prob) / len(y_prob)
         ax.hist(y_prob, weights=weights, bins=25, alpha=0.6, label='GHS-S2')
@@ -127,13 +173,13 @@ def histogram_ghs_comparison(cfg: experiment_manager.CfgNode):
 
     plt.tight_layout()
     plt.legend(frameon=False, handletextpad=0.5, columnspacing=0.8, handlelength=0.6)
-    output_file = Path(cfg.PATHS.OUTPUT) / 'plots' / f'histogram_{cfg.NAME}.png'
+    output_file = Path(cfg.PATHS.OUTPUT) / 'plots' / f'histogram_ghs_comparison_{cfg.NAME}.png'
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
     plt.close(fig)
 
 
 # https://matplotlib.org/stable/gallery/statistics/boxplot_color.html
-def plot_boxplots_spacenet7(metric: str, metric_name: str, cfg: experiment_manager.CfgNode, gap_index: int):
+def regional_comparison_boxplots(metric: str, metric_name: str, cfg: experiment_manager.CfgNode, gap_index: int):
     config_names = ['sar', 'optical', 'fusion', cfg.NAME, 'ghs', 'wsf2019']
     names = ['SAR', 'Opt', 'Fus.', 'Fus.-DA', 'GHS', 'WSF']
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#e377c2']
@@ -152,7 +198,7 @@ def plot_boxplots_spacenet7(metric: str, metric_name: str, cfg: experiment_manag
         ax = axs[ax_i, ax_j]
         boxplot_data = []
         for j, config_name in enumerate(config_names):
-            data = get_quantitative_data(cfg.PATH.OUTPUT, config_name)
+            data = get_quantitative_data(cfg.PATHS.OUTPUT, config_name)
             region_data = [site[metric] for site in data[region]]
             boxplot_data.append(region_data)
 
@@ -187,7 +233,7 @@ def plot_boxplots_spacenet7(metric: str, metric_name: str, cfg: experiment_manag
     axs[1, 0].legend(handles, names, loc='lower left', ncol=2, frameon=False, handletextpad=0.5,
                      columnspacing=0.8, handlelength=0.6, fontsize=FONTSIZE)
     plt.tight_layout()
-    output_file = Path(cfg.PATHS.OUTPUT) / 'plots' / f'boxplots_{cfg.NAME}.png'
+    output_file = Path(cfg.PATHS.OUTPUT) / 'plots' / f'boxplots_{metric}_{cfg.NAME}.png'
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
     plt.close(fig)
 
@@ -195,9 +241,9 @@ def plot_boxplots_spacenet7(metric: str, metric_name: str, cfg: experiment_manag
 if __name__ == '__main__':
     args = parsers.testing_inference_argument_parser().parse_known_args()[0]
     cfg = experiment_manager.setup_cfg(args)
-    qualitative_testing(cfg)
-    histogram_ghs_comparison(cfg)
-    metrics = ['f1_score', 'precision', 'recall', 'iou']
-    metric_names = ['F1 score', 'Precision', 'Recall', 'IoU']
-    for metric, metric_name in zip(metrics, metric_names):
-        plot_boxplots_spacenet7(metric, metric_name, cfg, 4)
+    # qualitative_testing(cfg)
+    # qualitative_results(cfg)
+    # histogram_ghs_comparison(cfg)
+    # metrics = ['f1_score', 'precision', 'recall', 'iou']
+    # metric_names = ['F1 score', 'Precision', 'Recall', 'IoU']
+    regional_comparison_boxplots('f1_score', 'F1 score', cfg, 4)

@@ -16,7 +16,7 @@ def get_region_name(dataset_path: str, aoi_id: str) -> str:
     file = Path(dataset_path) / 'spacenet7' / 'spacenet7_regions.json'
     metadata_regions = geofiles.load_json(file)
     region_index = metadata_regions['data'][aoi_id]
-    region_name = metadata_regions['regions'][region_index]
+    region_name = metadata_regions['regions'][str(region_index)]
     return region_name
 
 
@@ -35,7 +35,6 @@ def run_inference_spacenet7(cfg: experiment_manager):
             img = test_site['x'].to(device)
             y_prob = net(img.unsqueeze(0))
             y_prob = torch.sigmoid(y_prob).squeeze().cpu().numpy()
-            y_prob = (y_prob * 100).astype(np.uint8)
 
             output_folder = Path(cfg.PATHS.DATASET) / 'spacenet7' / cfg.NAME
             output_folder.mkdir(exist_ok=True)
@@ -66,7 +65,7 @@ def run_quantitative_inference_spacenet7(cfg: experiment_manager.CfgNode, thresh
                 data[region_name] = []
 
             f1 = metrics.f1_score_from_prob(y_prob, y_true, threshold)
-            p = metrics.precsision_from_prob(y_prob, y_true, threshold)
+            p = metrics.precision_from_prob(y_prob, y_true, threshold)
             r = metrics.recall_from_prob(y_prob, y_true, threshold)
             iou = metrics.iou_from_prob(y_prob, y_true, threshold)
 
@@ -88,7 +87,6 @@ def run_quantitative_inference_spacenet7(cfg: experiment_manager.CfgNode, thresh
 
 
 def run_quantitative_inference_sota(dataset_path: str, output_path: str, sota_name: str, threshold: float):
-
     data = {}
     aoi_ids = get_spacenet7_aoi_ids(dataset_path)
     for aoi_id in aoi_ids:
@@ -104,13 +102,12 @@ def run_quantitative_inference_sota(dataset_path: str, output_path: str, sota_na
         y_true, *_ = geofiles.read_tif(file)
         y_true = (y_true.flatten() > 0).astype(np.float32)
 
-
         region_name = get_region_name(dataset_path, aoi_id)
         if region_name not in data.keys():
             data[region_name] = []
 
         f1 = metrics.f1_score_from_prob(sota, y_true, threshold)
-        p = metrics.precsision_from_prob(sota, y_true, threshold)
+        p = metrics.precision_from_prob(sota, y_true, threshold)
         r = metrics.recall_from_prob(sota, y_true, threshold)
 
         site_data = {

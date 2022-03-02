@@ -27,8 +27,7 @@ def load_checkpoint(epoch: int, cfg: experiment_manager.CfgNode, device):
     net = create_network(cfg)
     net.to(device)
 
-    dirs = paths.load_paths()
-    save_file = Path(dirs.PATHS.OUTPUT) / 'networks' / f'{cfg.NAME}_checkpoint{epoch}.pt'
+    save_file = Path(cfg.PATHS.OUTPUT) / 'networks' / f'{cfg.NAME}_checkpoint{epoch}.pt'
     checkpoint = torch.load(save_file, map_location=device)
 
     optimizer = torch.optim.AdamW(net.parameters(), lr=cfg.TRAINER.LR, weight_decay=0.01)

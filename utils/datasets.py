@@ -181,10 +181,11 @@ class UrbanExtractionDataset(AbstractUrbanExtractionDataset):
         return item
 
     def _get_spacenet7s1s2_data(self, sensor: str, aoi_id: str, year: int, month: int):
+        sensor = f's{sensor[-1]}'
         fname = f'{sensor}_{aoi_id}_{year}_{month:02d}.tif'
         file = self.spacenet7s1s2_dataset_path / aoi_id / sensor / fname
         img, transform, crs = geofiles.read_tif(file)
-        band_indices = self.s1_indices if sensor == 'sentinel1' else self.s2_indices
+        band_indices = self.s1_indices if sensor == 's1' else self.s2_indices
         img = img[:, :, band_indices]
         return np.nan_to_num(img).astype(np.float32), transform, crs
 

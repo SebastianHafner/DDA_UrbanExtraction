@@ -1,13 +1,13 @@
 SEED: 7
 DEBUG: True
 LOG_FREQ: 100
-SAVE_CHECKPOINTS: [10, 15, 20]
+SAVE_CHECKPOINTS: [15]
 INFERENCE_CHECKPOINT: 15
 
 TRAINER:
   LR: 1e-4
   BATCH_SIZE: 8
-  EPOCHS: 20
+  EPOCHS: 15
   OPTIMIZER: 'adamw'
 
 CONSISTENCY_TRAINER:
@@ -31,7 +31,6 @@ DATALOADER:
   MODE: 'fusion'
   SENTINEL1_BANDS: ['VV', 'VH']
   SENTINEL2_BANDS: ['B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B11', 'B12']
-  AUXILIARY_INPUTS: []
   INCLUDE_UNLABELED: False
 
 AUGMENTATION:
@@ -45,17 +44,16 @@ DATASET:
   TRAINING: ['albuquerque', 'atlantaeast', 'atlantawest', 'charlston', 'columbus', 'dallas', 'denver', 'elpaso', 'houston',
              'kansascity', 'lasvegas', 'losangeles', 'miami', 'minneapolis', 'montreal', 'phoenix',
              'quebec', 'saltlakecity', 'sandiego', 'santafe', 'seattle', 'stgeorge', 'toronto',
-             'tucson', 'winnipeg']
+             'tucson', 'winnipeg', 'sidney', 'perth']
   VALIDATION: ['calgary', 'newyork', 'sanfrancisco', 'vancouver']
   UNLABELED: ['beijing', 'dubai', 'jakarta', 'kairo', 'kigali', 'lagos', 'mexicocity', 'mumbai',
               'riodejanairo', 'shanghai', 'buenosaires', 'bogota', 'sanjose', 'santiagodechile', 'kapstadt', 'tripoli',
-              'freetown', 'london', 'madrid', 'kinshasa', 'manila', 'moscow', 'newdehli', 'nursultan', 'perth',
-              'tokio', 'stockholm', 'sidney', 'maputo', 'caracas', 'santacruzdelasierra', 'saopaulo', 'asuncion',
+              'freetown', 'london', 'madrid', 'kinshasa', 'manila', 'moscow', 'newdehli', 'nursultan',
+              'tokio', 'stockholm', 'maputo', 'caracas', 'santacruzdelasierra', 'saopaulo', 'asuncion',
               'lima', 'paramaribo', 'libreville', 'djibuti', 'beirut', 'baghdad', 'athens', 'islamabad', 'hanoi',
               'bangkok', 'dhaka', 'bengaluru', 'taipeh', 'berlin', 'nanning', 'wuhan', 'daressalam', 'milano',
               'zhengzhou', 'hefei', 'xian', 'seoul', 'ibadan', 'benincity', 'abidjan', 'accra', 'amsterdam', 'riyadh',
               'amman', 'damascus', 'nouakchott', 'prague', 'sanaa', 'kuwaitcity', 'tehran']
-  INCLUDE_SPACENET7: False
 
 
 

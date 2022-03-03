@@ -1,8 +1,0 @@
-_BASE_: "fusionda_base.yaml"
-DEBUG: False
-
-CONSISTENCY_TRAINER:
-  LOSS_FACTOR: 0.01
-
-DATASET:
-  INCLUDE_SPACENET7: True

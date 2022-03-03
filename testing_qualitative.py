@@ -73,7 +73,7 @@ def qualitative_sota_comparison(cfg: experiment_manager.CfgNode):
 
         ax_ours = axs[1, 2]
         ours_file = Path(dataset_path) / 'spacenet7' / cfg.NAME / f'{cfg.NAME}_{aoi_id}.tif'
-        visualization.plot_buildings(ax_ours, ours_file, 50)
+        visualization.plot_buildings(ax_ours, ours_file, 0.5)
         ax_ours.set_xlabel(f'(f) Ours (Fusion-DA)', fontsize=FONTSIZE)
         ax_ours.xaxis.set_label_coords(0.5, -0.025)
 
@@ -139,24 +139,25 @@ def regional_ghs_comparison_histograms(cfg: experiment_manager.CfgNode):
         ax_j = i % 3
         ax = axs[ax_i, ax_j]
 
-        # ours (cfg)
-        data = get_quantitative_data(cfg.PATHS.OUTPUT, cfg.NAME)
-        y_prob = np.concatenate([site['y_prob'] for site in data[region]]).flatten()
-        weights = np.ones_like(y_prob) / len(y_prob)
-        ax.hist(y_prob, weights=weights, bins=25, alpha=0.6, label='Fusion-DA')
-
         # ghs
         data = get_quantitative_data(cfg.PATHS.OUTPUT, 'ghs')
         y_prob = np.concatenate([site['y_prob'] for site in data[region]]).flatten()
         weights = np.ones_like(y_prob) / len(y_prob)
         ax.hist(y_prob, weights=weights, bins=25, alpha=0.6, label='GHS-S2')
 
+        # ours (cfg)
+        data = get_quantitative_data(cfg.PATHS.OUTPUT, cfg.NAME)
+        y_prob = np.concatenate([site['y_prob'] for site in data[region]]).flatten()
+        weights = np.ones_like(y_prob) / len(y_prob)
+        ax.hist(y_prob, weights=weights, bins=25, alpha=0.6, label='Fusion-DA')
+
         if ax_j == 0:
             ax.set_ylabel('Frequency (%)', fontsize=FONTSIZE)
         if ax_i == 1:
             ax.set_xlabel('CNN output probability', fontsize=FONTSIZE)
 
-        ax.text(0.1, 0.087, region, fontsize=24)
+        domain = r'$\mathcal{S}$' if region == 'NWW' else r'$\mathcal{T}$'
+        ax.text(0.1, 0.087, f'{region} ({domain})', fontsize=24)
         ax.yaxis.grid(True)
 
         xticks = np.linspace(0, 1, 5)
@@ -222,7 +223,8 @@ def regional_comparison_boxplots(metric: str, metric_name: str, cfg: experiment_
         ax.set_ylim((0, 1))
         if ax_j == 0:
             ax.set_ylabel(metric_name, fontsize=FONTSIZE)
-        ax.text(-0.2, 0.87, region, fontsize=24)
+        domain = r'$\mathcal{S}$' if region == 'NWW' else r'$\mathcal{T}$'
+        ax.text(-0.2, 0.87, f'{region} ({domain})', fontsize=24)
         ax.yaxis.grid(True)
 
         x_ticks = [(gap_index - 1) / 2] + [i for i in range(gap_index, len(config_names))]
@@ -242,8 +244,8 @@ if __name__ == '__main__':
     args = parsers.testing_inference_argument_parser().parse_known_args()[0]
     cfg = experiment_manager.setup_cfg(args)
     # qualitative_testing(cfg)
-    # qualitative_results(cfg)
-    # histogram_ghs_comparison(cfg)
+    # qualitative_sota_comparison(cfg)
+    regional_ghs_comparison_histograms(cfg)
     # metrics = ['f1_score', 'precision', 'recall', 'iou']
     # metric_names = ['F1 score', 'Precision', 'Recall', 'IoU']
     regional_comparison_boxplots('f1_score', 'F1 score', cfg, 4)

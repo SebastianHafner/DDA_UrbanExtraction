@@ -9,7 +9,7 @@ Accurate and up-to-date maps of Built-Up Area (BUA) are crucial to support susta
 
 Overview of our unsupervised domain adaptation approach. Model parameters are optimized with a supervised loss and a consistency loss for labeled and unlabeled data, respectively. Supervised loss is comprised of three loss terms: two for the sub-networks and one for the fusion of the features extracted from the sub-networks. Consistency loss is used to optimize model parameters in a unsupervised manner by training the sub-networks to agree on their predictions. The fusion prediction is used for inference.
 
-![](figures/domain_adaptation_workflow_revised.PNG)
+![](figures/domain_adaptation_workflow_revised.png)
 
 
 # Replicating our results

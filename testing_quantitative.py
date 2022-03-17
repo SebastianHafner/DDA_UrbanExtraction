@@ -3,9 +3,6 @@ import numpy as np
 import matplotlib as mpl
 from utils import geofiles, parsers, metrics
 
-FONTSIZE = 18
-mpl.rcParams.update({'font.size': FONTSIZE})
-
 
 def get_spacenet7_aoi_ids(dataset_path: str) -> list:
     file = Path(dataset_path) / 'spacenet7' / 'spacenet7_regions.json'
@@ -30,42 +27,33 @@ def get_quantitative_data(output_path: str, config_name: str):
     return data
 
 
-# TODO: write this to file
-def quantitative_analysis(config_name: str, output_path: str):
-    threshold = 0.2 if config_name == 'ghs' else 0.5
+def quantitative_analysis(config_name: str, dataset_path: str, output_path: str):
+    metric_names = ['f1_score', 'precision', 'recall', 'iou']
+    regions = get_region_names(dataset_path)
     data = get_quantitative_data(output_path, config_name)
     output = {}
-    for metric in ['f1_score', 'precision', 'recall', 'iou']:
-        print(metric)
-        region_values = []
-        for region_name, region in data.items():
-
-            y_true = np.concatenate([site['y_true'] for site in region], axis=0)
-            y_prob = np.concatenate([site['y_prob'] for site in region], axis=0)
-
+    for metric in metric_names:
+        values = []
+        for region in regions:
+            y_true = np.concatenate([site['y_true'] for site in data[region]], axis=0)
+            y_pred = np.concatenate([site['y_pred'] for site in data[region]], axis=0)
             if metric == 'f1_score':
-                value = metrics.f1_score_from_prob(y_prob, y_true, threshold)
+                value = metrics.f1_score_from_prob(y_pred, y_true)
             elif metric == 'precision':
-                value = metrics.precision_from_prob(y_prob, y_true, threshold)
+                value = metrics.precision_from_prob(y_pred, y_true)
             elif metric == 'recall':
-                value = metrics.recall_from_prob(y_prob, y_true, threshold)
+                value = metrics.recall_from_prob(y_pred, y_true)
             else:
-                value = metrics.iou_from_prob(y_prob, y_true, threshold)
-            region_values.append(value)
-
-        output[f'regional_{metric}'] = {
-            'min': np.min(region_values),
-            'max': np.max(region_values),
-            'mean': np.mean(region_values),
-            'std': np.std(region_values)
+                value = metrics.iou_from_prob(y_pred, y_true)
+            values.append(value)
+        output[metric] = {
+            'min': np.min(values),
+            'max': np.max(values),
+            'mean': np.mean(values),
+            'std': np.std(values)
         }
-
-    y_true = np.concatenate([site['y_true'] for region in data.values() for site in region], axis=0)
-    y_prob = np.concatenate([site['y_prob'] for region in data.values() for site in region], axis=0)
-    output['total_f1_score'] = metrics.f1_score_from_prob(y_prob, y_true, threshold)
-    output['total_precision'] = metrics.precision_from_prob(y_prob, y_true, threshold)
-    output['total_recall'] = metrics.recall_from_prob(y_prob, y_true, threshold)
-    output['total_iou'] = metrics.iou_from_prob(y_prob, y_true, threshold)
+    for metric in metric_names:
+        output[f'total_{metric}'] = data[f'total_{metric}']
 
     out_file = Path(output_path) / 'testing' / f'quantitative_results_{config_name}.json'
     geofiles.write_json(out_file, output)
@@ -73,4 +61,4 @@ def quantitative_analysis(config_name: str, output_path: str):
 
 if __name__ == '__main__':
     args = parsers.testing_inference_argument_parser().parse_known_args()[0]
-    quantitative_analysis(args.config_file, args.output_dir)
+    quantitative_analysis(args.config_file, args.dataset_dir, args.output_dir)

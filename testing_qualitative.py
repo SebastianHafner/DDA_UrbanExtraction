@@ -24,6 +24,13 @@ def get_region_names(dataset_path: str) -> list:
     return region_names
 
 
+def get_ghs_threshold(dataset_path: str, aoi_id: str) -> float:
+    file = Path(dataset_path) / 'spacenet7' / 'ghs_thresholds.json'
+    ghs_thresholds = geofiles.load_json(file)
+    threshold = float(ghs_thresholds[aoi_id])
+    return threshold
+
+
 def get_quantitative_data(output_path: str, config_name: str):
     data_file = Path(output_path) / 'testing' / f'probabilities_{config_name}.npy'
     assert(data_file.exists())
@@ -61,7 +68,7 @@ def qualitative_sota_comparison(cfg: experiment_manager.CfgNode):
 
         ax_ghs = axs[1, 0]
         ghs_file = Path(dataset_path) / 'spacenet7' / 'ghs' / f'ghs_{aoi_id}.tif'
-        visualization.plot_buildings(ax_ghs, ghs_file, 0.2)
+        visualization.plot_buildings(ax_ghs, ghs_file, get_ghs_threshold(dataset_path, aoi_id))
         ax_ghs.set_xlabel(f'(d) GHS-S2', fontsize=FONTSIZE)
         ax_ghs.xaxis.set_label_coords(0.5, -0.025)
 
@@ -244,7 +251,7 @@ if __name__ == '__main__':
     args = parsers.testing_inference_argument_parser().parse_known_args()[0]
     cfg = experiment_manager.setup_cfg(args)
     # qualitative_testing(cfg)
-    # qualitative_sota_comparison(cfg)
+    qualitative_sota_comparison(cfg)
     regional_ghs_comparison_histograms(cfg)
     # metrics = ['f1_score', 'precision', 'recall', 'iou']
     # metric_names = ['F1 score', 'Precision', 'Recall', 'IoU']

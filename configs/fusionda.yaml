@@ -1,0 +1,2 @@
+_BASE_: "fusionda_base.yaml"
+DEBUG: False

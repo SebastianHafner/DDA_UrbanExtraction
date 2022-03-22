@@ -118,6 +118,11 @@ def true_positives_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: 
     return np.sum(np.logical_and(y_pred, y_true))
 
 
+def true_negatives_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5):
+    y_pred = y_prob > threshold
+    return np.sum(np.logical_and(np.logical_not(y_pred), np.logical_not(y_true)))
+
+
 def false_positives_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5):
     y_pred = y_prob > threshold
     return np.sum(np.logical_and(y_pred, np.logical_not(y_true)))
@@ -140,6 +145,19 @@ def recall_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 
     return tp / (tp + fn + sys.float_info.epsilon)
 
 
+# same as recall
+def true_positive_rate_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5):
+    tp = true_positives_from_prob(y_prob, y_true, threshold)
+    fn = false_negatives_from_prob(y_prob, y_true, threshold)
+    return tp / (tp + fn + sys.float_info.epsilon)
+
+
+def false_positive_rate_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5):
+    fp = false_positives_from_prob(y_prob, y_true, threshold)
+    tn = true_negatives_from_prob(y_prob, y_true, threshold)
+    return fp / (fp + tn + sys.float_info.epsilon)
+
+
 def iou_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5):
     tp = true_positives_from_prob(y_prob, y_true, threshold)
     fp = false_positives_from_prob(y_prob, y_true, threshold)
@@ -154,3 +172,14 @@ def kappa_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0
 
 def root_mean_square_error(y_pred: np.ndarray, y_true: np.ndarray):
     return np.sqrt(np.sum(np.square(y_pred - y_true)) / np.size(y_true))
+
+
+def roc_curve(y_prob: np.ndarray, y_true: np.ndarray, n_thresholds: int = 200_000):
+    thresholds = list(np.linspace(0, 1, n_thresholds, endpoint=True))[::-1]
+    tpr = []
+    fpr = []
+    for thresh in thresholds:
+        tpr.append(true_positive_rate_from_prob(y_prob, y_true, thresh))
+        fpr.append(false_positive_rate_from_prob(y_prob, y_true, thresh))
+    return fpr, tpr, thresholds
+

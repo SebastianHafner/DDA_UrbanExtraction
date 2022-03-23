@@ -163,8 +163,8 @@ def regional_ghs_comparison_histograms(cfg: experiment_manager.CfgNode):
         if ax_i == 1:
             ax.set_xlabel('CNN output probability', fontsize=FONTSIZE)
 
-        domain = r'$\mathcal{S}$' if region == 'NWW' else r'$\mathcal{T}$'
-        ax.text(0.1, 0.087, f'{region} ({domain})', fontsize=24)
+        title = 'Source' if region == 'NWW' else f'Target {region}'
+        ax.text(0.1, 0.087, title, fontsize=24)
         ax.yaxis.grid(True)
 
         xticks = np.linspace(0, 1, 5)
@@ -180,7 +180,7 @@ def regional_ghs_comparison_histograms(cfg: experiment_manager.CfgNode):
         ax.set_yticklabels(yticklabels, fontsize=FONTSIZE)
 
     plt.tight_layout()
-    plt.legend(frameon=False, handletextpad=0.5, columnspacing=0.8, handlelength=0.6)
+    axs[0, 0].legend(frameon=False, handletextpad=0.5, columnspacing=0.8, handlelength=0.6)
     output_file = Path(cfg.PATHS.OUTPUT) / 'plots' / f'histogram_ghs_comparison_{cfg.NAME}.png'
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
     plt.close(fig)
@@ -230,8 +230,8 @@ def regional_comparison_boxplots(metric: str, metric_name: str, cfg: experiment_
         ax.set_ylim((0, 1))
         if ax_j == 0:
             ax.set_ylabel(metric_name, fontsize=FONTSIZE)
-        domain = r'$\mathcal{S}$' if region == 'NWW' else r'$\mathcal{T}$'
-        ax.text(-0.2, 0.87, f'{region} ({domain})', fontsize=24)
+        title = 'Source' if region == 'NWW' else f'Target {region}'
+        ax.text(-0.2, 0.87, title, fontsize=24)
         ax.yaxis.grid(True)
 
         x_ticks = [(gap_index - 1) / 2] + [i for i in range(gap_index, len(config_names))]
@@ -251,7 +251,7 @@ if __name__ == '__main__':
     args = parsers.testing_inference_argument_parser().parse_known_args()[0]
     cfg = experiment_manager.setup_cfg(args)
     # qualitative_testing(cfg)
-    qualitative_sota_comparison(cfg)
+    # qualitative_sota_comparison(cfg)
     regional_ghs_comparison_histograms(cfg)
     # metrics = ['f1_score', 'precision', 'recall', 'iou']
     # metric_names = ['F1 score', 'Precision', 'Recall', 'IoU']

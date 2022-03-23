@@ -76,22 +76,17 @@ def run_quantitative_inference_ours(cfg: experiment_manager.CfgNode, threshold: 
 
             y_pred = (y_prob > threshold).astype(np.float32)
             y_preds.append(y_pred)
-
-            f1 = metrics.f1_score_from_prob(y_prob, y_true, threshold)
-            p = metrics.precision_from_prob(y_prob, y_true, threshold)
-            r = metrics.recall_from_prob(y_prob, y_true, threshold)
-            iou = metrics.iou_from_prob(y_prob, y_true, threshold)
-
             site_data = {
                 'aoi_id': test_site['aoi_id'],
                 'y_prob': y_prob,
                 'y_pred': y_pred,
                 'y_true': y_true,
                 'threshold': threshold,
-                'f1_score': f1,
-                'precision': p,
-                'recall': r,
-                'iou': iou,
+                'f1_score': metrics.f1_score_from_prob(y_prob, y_true, threshold),
+                'precision': metrics.precision_from_prob(y_prob, y_true, threshold),
+                'recall': metrics.recall_from_prob(y_prob, y_true, threshold),
+                'iou': metrics.iou_from_prob(y_prob, y_true, threshold),
+                'kappa': metrics.kappa_from_prob(y_prob, y_true, threshold),
             }
 
             data[region_name].append(site_data)
@@ -102,6 +97,7 @@ def run_quantitative_inference_ours(cfg: experiment_manager.CfgNode, threshold: 
     data['total_precision'] = metrics.precision_from_prob(y_preds, y_trues, 0.5)
     data['total_recall'] = metrics.recall_from_prob(y_preds, y_trues, 0.5)
     data['total_iou'] = metrics.iou_from_prob(y_preds, y_trues, 0.5)
+    data['total_kappa'] = metrics.kappa_from_prob(y_preds.astype('float64'), y_trues.astype('float64'), 0.5)
 
     output_file = Path(cfg.PATHS.OUTPUT) / 'testing' / f'probabilities_{cfg.NAME}.npy'
     output_file.parent.mkdir(exist_ok=True)
@@ -134,10 +130,6 @@ def run_quantitative_inference_sota(dataset_path: str, output_path: str, sota_na
         threshold = get_ghs_threshold(dataset_path, aoi_id) if sota_name == 'ghs' else 0.5
         y_pred = (sota > threshold).astype(np.float32)
         y_preds.append(y_pred)
-        f1 = metrics.f1_score_from_prob(sota, y_true, threshold)
-        p = metrics.precision_from_prob(sota, y_true, threshold)
-        r = metrics.recall_from_prob(sota, y_true, threshold)
-        iou = metrics.iou_from_prob(sota, y_true, threshold)
 
         site_data = {
             'aoi_id': aoi_id,
@@ -145,10 +137,11 @@ def run_quantitative_inference_sota(dataset_path: str, output_path: str, sota_na
             'y_pred': y_pred,
             'y_true': y_true,
             'threshold': threshold,
-            'f1_score': f1,
-            'precision': p,
-            'recall': r,
-            'iou': iou,
+            'f1_score': metrics.f1_score_from_prob(sota, y_true, threshold),
+            'precision': metrics.precision_from_prob(sota, y_true, threshold),
+            'recall': metrics.recall_from_prob(sota, y_true, threshold),
+            'iou': metrics.iou_from_prob(sota, y_true, threshold),
+            'kappa': metrics.kappa_from_prob(sota, y_true, threshold),
         }
 
         data[region_name].append(site_data)
@@ -159,6 +152,7 @@ def run_quantitative_inference_sota(dataset_path: str, output_path: str, sota_na
     data['total_precision'] = metrics.precision_from_prob(y_preds, y_trues, 0.5)
     data['total_recall'] = metrics.recall_from_prob(y_preds, y_trues, 0.5)
     data['total_iou'] = metrics.iou_from_prob(y_preds, y_trues, 0.5)
+    data['total_kappa'] = metrics.kappa_from_prob(y_preds, y_trues, 0.5)
 
     output_file = Path(output_path) / 'testing' / f'probabilities_{sota_name}.npy'
     output_file.parent.mkdir(exist_ok=True)

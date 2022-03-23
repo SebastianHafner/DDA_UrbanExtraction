@@ -179,7 +179,8 @@ def plot_test(cfg: experiment_manager.CfgNode):
     ax.set_xlabel(r'Number of pixels')
 
     ax.set_yticks(ypos)
-    ax.set_yticklabels(regions[::-1])
+    y_ticklabels = ['Source' if region == 'NWW' else f'Target {region}' for region in regions][::-1]
+    ax.set_yticklabels(y_ticklabels)
     ax.legend((neg, pos), ('Non-built-up', 'Built-up'), ncol=1, frameon=False,
               handletextpad=0.8, columnspacing=1, handlelength=1)
     out_file = Path(cfg.PATHS.OUTPUT) / 'plots' / 'dataset_stats' / 'test_dataset.png'
@@ -211,8 +212,8 @@ if __name__ == '__main__':
     args = parsers.testing_inference_argument_parser().parse_known_args()[0]
     cfg = experiment_manager.setup_cfg(args)
     # training validation
-    plot_train_validation(cfg)
-    show_validation_training(cfg)
+    # plot_train_validation(cfg)
+    # show_validation_training(cfg)
     # testing
     plot_test(cfg)
-    show_test(cfg)
+    # show_test(cfg)

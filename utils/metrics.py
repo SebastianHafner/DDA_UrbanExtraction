@@ -115,17 +115,26 @@ def f1_score_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float 
 
 def true_positives_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5):
     y_pred = y_prob > threshold
-    return np.sum(np.logical_and(y_pred, y_true))
+    tp = np.sum(np.logical_and(y_pred, y_true))
+    return tp.astype(np.int64)
+
+
+def true_negatives_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5):
+    y_pred = y_prob > threshold
+    tn = np.sum(np.logical_and(np.logical_not(y_pred), np.logical_not(y_true)))
+    return tn.astype(np.int64)
 
 
 def false_positives_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5):
     y_pred = y_prob > threshold
-    return np.sum(np.logical_and(y_pred, np.logical_not(y_true)))
+    fp = np.sum(np.logical_and(y_pred, np.logical_not(y_true)))
+    return fp.astype(np.int64)
 
 
 def false_negatives_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5):
     y_pred = y_prob > threshold
-    return np.sum(np.logical_and(np.logical_not(y_pred), y_true))
+    fn = np.sum(np.logical_and(np.logical_not(y_pred), y_true))
+    return fn.astype(np.int64)
 
 
 def precision_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5):
@@ -147,9 +156,14 @@ def iou_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5
     return tp / (tp + fp + fn)
 
 
-# TODO: implement
 def kappa_from_prob(y_prob: np.ndarray, y_true: np.ndarray, threshold: float = 0.5):
-    pass
+    tp = true_positives_from_prob(y_prob, y_true, threshold)
+    tn = true_negatives_from_prob(y_prob, y_true, threshold)
+    fp = false_positives_from_prob(y_prob, y_true, threshold)
+    fn = false_negatives_from_prob(y_prob, y_true, threshold)
+    nominator = 2 * (tp * tn - fn * fp)
+    denominator = (tp + fp) * (fp + tn) + (tp + fn) * (fn + tn)
+    return nominator / denominator
 
 
 def root_mean_square_error(y_pred: np.ndarray, y_true: np.ndarray):

@@ -28,7 +28,7 @@ def get_quantitative_data(output_path: str, config_name: str):
 
 
 def quantitative_analysis(config_name: str, dataset_path: str, output_path: str):
-    metric_names = ['f1_score', 'precision', 'recall', 'iou']
+    metric_names = ['f1_score', 'precision', 'recall', 'iou', 'kappa']
     regions = get_region_names(dataset_path)
     data = get_quantitative_data(output_path, config_name)
     output = {}
@@ -43,8 +43,10 @@ def quantitative_analysis(config_name: str, dataset_path: str, output_path: str)
                 value = metrics.precision_from_prob(y_pred, y_true)
             elif metric == 'recall':
                 value = metrics.recall_from_prob(y_pred, y_true)
-            else:
+            elif metric == 'iou':
                 value = metrics.iou_from_prob(y_pred, y_true)
+            else:
+                value = metrics.kappa_from_prob(y_pred, y_true)
             values.append(value)
         output[metric] = {
             'min': np.min(values),

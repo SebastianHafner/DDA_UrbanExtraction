@@ -483,8 +483,8 @@ def regional_comparison_pr_curves_v2(cfg: experiment_manager.CfgNode):
             mean_recall = np.mean(np.stack(recall_list), axis=0)
             ax.plot(mean_recall, mean_precision, linestyle='-', label=names[j], c=colors[j])
 
-        domain = r'$\mathcal{S}$' if region == 'NWW' else r'$\mathcal{T}$'
-        ax.text(0.6, 0.1, f'{region} ({domain})', fontsize=24)
+        title = 'Source' if region == 'NWW' else f'Target {region}'
+        ax.text(0.1, 0.1, title, fontsize=24)
 
         ax.set_xlabel('Recall')
         ax.set_ylabel('Precision')
@@ -572,8 +572,8 @@ if __name__ == '__main__':
     # qualitative_sota_comparison(cfg)
     # regional_ghs_comparison_histograms(cfg)
     # regional_comparison_roc_analysis_v2(cfg)
-    # regional_comparison_pr_curves_v2(cfg)
-    boxplot_pr_auc_comparison(cfg)
+    regional_comparison_pr_curves_v2(cfg)
+    # boxplot_pr_auc_comparison(cfg)
     # boxplot_auc_comparison(cfg)
     # metrics = ['f1_score', 'precision', 'recall', 'iou']
     # metric_names = ['F1 score', 'Precision', 'Recall', 'IoU']

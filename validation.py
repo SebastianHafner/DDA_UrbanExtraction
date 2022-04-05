@@ -48,6 +48,7 @@ def get_quantitative_results(cfg: experiment_manager.CfgNode, run_type: str):
         'precision': metrics.precision_from_prob(y_prob, y_true),
         'recall': metrics.recall_from_prob(y_prob, y_true),
         'iou': metrics.iou_from_prob(y_prob, y_true),
+        'kappa': metrics.kappa_from_prob(y_prob, y_true),
     }
     data_file = Path(cfg.PATHS.OUTPUT) / 'validation' / f'quantitative_results_{run_type}_{cfg.NAME}.json'
     geofiles.write_json(data_file, data)

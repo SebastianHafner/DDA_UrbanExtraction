@@ -99,9 +99,9 @@ def plot_train_validation(cfg: experiment_manager):
     ax.set_yticklabels(['Val. labeled', 'Train. unlabeled', 'Train. labeled'])
     ax.legend((neg, pos, na), ('Non-built-up', 'Built-up', 'N/A'), loc='lower right', ncol=3, frameon=False,
               handletextpad=0.8, columnspacing=1, handlelength=1)
-    out_file = Path(cfg.PATHS.OUTPUT) / 'plots' / 'dataset_stats' / 'train_val_dataset.png'
+    out_file = Path(cfg.PATHS.OUTPUT) / 'plots' / 'dataset_stats' / 'train_val_dataset.jpeg'
     out_file.parent.mkdir(exist_ok=True)
-    plt.savefig(out_file, dpi=300, bbox_inches='tight')
+    plt.savefig(out_file, dpi=300, bbox_inches='tight', format='jpeg')
     plt.close(fig)
 
 
@@ -183,9 +183,9 @@ def plot_test(cfg: experiment_manager.CfgNode):
     ax.set_yticklabels(y_ticklabels)
     ax.legend((neg, pos), ('Non-built-up', 'Built-up'), ncol=1, frameon=False,
               handletextpad=0.8, columnspacing=1, handlelength=1)
-    out_file = Path(cfg.PATHS.OUTPUT) / 'plots' / 'dataset_stats' / 'test_dataset.png'
+    out_file = Path(cfg.PATHS.OUTPUT) / 'plots' / 'dataset_stats' / 'test_dataset.jpeg'
     out_file.parent.mkdir(exist_ok=True)
-    plt.savefig(out_file, dpi=300, bbox_inches='tight')
+    plt.savefig(out_file, dpi=300, bbox_inches='tight', format='jpeg')
     plt.close(fig)
 
 
@@ -212,7 +212,7 @@ if __name__ == '__main__':
     args = parsers.testing_inference_argument_parser().parse_known_args()[0]
     cfg = experiment_manager.setup_cfg(args)
     # training validation
-    # plot_train_validation(cfg)
+    plot_train_validation(cfg)
     # show_validation_training(cfg)
     # testing
     plot_test(cfg)

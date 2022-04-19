@@ -86,9 +86,9 @@ def qualitative_sota_comparison(cfg: experiment_manager.CfgNode):
 
         plt.tight_layout()
 
-        plot_file = Path(cfg.PATHS.OUTPUT) / 'plots' / 'qualitative_comparison' / f'qualitative_comparison_{aoi_id}.png'
+        plot_file = Path(cfg.PATHS.OUTPUT) / 'plots' / 'qualitative_comparison' / f'qualitative_comparison_{aoi_id}.jpeg'
         plot_file.parent.mkdir(exist_ok=True)
-        plt.savefig(plot_file, dpi=300, bbox_inches='tight')
+        plt.savefig(plot_file, dpi=300, bbox_inches='tight', format='jpeg')
         plt.close(fig)
 
 
@@ -133,8 +133,8 @@ def qualitative_results(cfg: experiment_manager.CfgNode):
         plt.tight_layout()
         folder = Path(cfg.PATHS.OUTPUT) / 'plots' / 'qualitative_results' / cfg.NAME
         folder.mkdir(exist_ok=True)
-        plot_file = folder / f'qualitative_comparison_{aoi_id}.png'
-        plt.savefig(plot_file, dpi=300, bbox_inches='tight')
+        plot_file = folder / f'qualitative_comparison_{aoi_id}.jpeg'
+        plt.savefig(plot_file, dpi=300, bbox_inches='tight', format='jpeg')
         plt.close(fig)
 
 
@@ -181,8 +181,8 @@ def regional_ghs_comparison_histograms(cfg: experiment_manager.CfgNode):
 
     plt.tight_layout()
     axs[0, 0].legend(frameon=False, handletextpad=0.5, columnspacing=0.8, handlelength=0.6)
-    output_file = Path(cfg.PATHS.OUTPUT) / 'plots' / f'histogram_ghs_comparison_{cfg.NAME}.png'
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    output_file = Path(cfg.PATHS.OUTPUT) / 'plots' / f'histogram_ghs_comparison_{cfg.NAME}.jpeg'
+    plt.savefig(output_file, dpi=300, bbox_inches='tight', format='jpeg')
     plt.close(fig)
 
 
@@ -242,8 +242,8 @@ def regional_comparison_boxplots(metric: str, metric_name: str, cfg: experiment_
     axs[1, 0].legend(handles, names, loc='lower left', ncol=2, frameon=False, handletextpad=0.5,
                      columnspacing=0.8, handlelength=0.6, fontsize=FONTSIZE)
     plt.tight_layout()
-    output_file = Path(cfg.PATHS.OUTPUT) / 'plots' / f'boxplots_{metric}_{cfg.NAME}.png'
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    output_file = Path(cfg.PATHS.OUTPUT) / 'plots' / f'boxplots_{metric}_{cfg.NAME}.jpeg'
+    plt.savefig(output_file, dpi=300, bbox_inches='tight', format='jpeg')
     plt.close(fig)
 
 
@@ -251,8 +251,8 @@ if __name__ == '__main__':
     args = parsers.testing_inference_argument_parser().parse_known_args()[0]
     cfg = experiment_manager.setup_cfg(args)
     # qualitative_testing(cfg)
-    # qualitative_sota_comparison(cfg)
-    regional_ghs_comparison_histograms(cfg)
+    qualitative_sota_comparison(cfg)
+    # regional_ghs_comparison_histograms(cfg)
     # metrics = ['f1_score', 'precision', 'recall', 'iou']
     # metric_names = ['F1 score', 'Precision', 'Recall', 'IoU']
-    regional_comparison_boxplots('f1_score', 'F1 score', cfg, 4)
+    # regional_comparison_boxplots('f1_score', 'F1 score', cfg, 4)

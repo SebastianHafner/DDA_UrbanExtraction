@@ -6,7 +6,7 @@ import numpy as np
 from pathlib import Path
 
 
-def plot_optical(ax, file: Path, vis: str = 'true_color', scale_factor: float = 0.4,
+def plot_optical(ax, file: Path, vis: str = 'true_color', scale_factor: float = 0.45,
                  show_title: bool = False):
     img, _, _ = geofiles.read_tif(file)
     band_indices = [2, 1, 0] if vis == 'true_color' else [6, 2, 1]

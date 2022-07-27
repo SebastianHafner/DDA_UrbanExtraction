@@ -41,19 +41,21 @@ AUGMENTATION:
   GAMMA_CORRECTION: True
 
 DATASET:
-  TRAINING: ['albuquerque', 'atlantaeast', 'atlantawest', 'charlston', 'columbus', 'dallas', 'denver', 'elpaso', 'houston',
-             'kansascity', 'lasvegas', 'losangeles', 'miami', 'minneapolis', 'montreal', 'phoenix',
-             'quebec', 'saltlakecity', 'sandiego', 'santafe', 'seattle', 'stgeorge', 'toronto',
-             'tucson', 'winnipeg', 'sidney', 'perth']
+  TRAINING: [
+    'albuquerque', 'atlantaeast', 'atlantawest', 'charlston', 'columbus', 'dallas', 'denver', 'elpaso', 'houston',
+    'kansascity', 'lasvegas', 'losangeles', 'miami', 'minneapolis', 'montreal', 'phoenix', 'quebec', 'saltlakecity',
+    'sandiego', 'santafe', 'seattle', 'stgeorge', 'toronto', 'tucson', 'winnipeg', 'sydney', 'perth'
+  ]
   VALIDATION: ['calgary', 'newyork', 'sanfrancisco', 'vancouver']
-  UNLABELED: ['beijing', 'dubai', 'jakarta', 'kairo', 'kigali', 'lagos', 'mexicocity', 'mumbai',
-              'riodejanairo', 'shanghai', 'buenosaires', 'bogota', 'sanjose', 'santiagodechile', 'kapstadt', 'tripoli',
-              'freetown', 'london', 'madrid', 'kinshasa', 'manila', 'moscow', 'newdehli', 'nursultan',
-              'tokio', 'stockholm', 'maputo', 'caracas', 'santacruzdelasierra', 'saopaulo', 'asuncion',
-              'lima', 'paramaribo', 'libreville', 'djibuti', 'beirut', 'baghdad', 'athens', 'islamabad', 'hanoi',
-              'bangkok', 'dhaka', 'bengaluru', 'taipeh', 'berlin', 'nanning', 'wuhan', 'daressalam', 'milano',
-              'zhengzhou', 'hefei', 'xian', 'seoul', 'ibadan', 'benincity', 'abidjan', 'accra', 'amsterdam', 'riyadh',
-              'amman', 'damascus', 'nouakchott', 'prague', 'sanaa', 'kuwaitcity', 'tehran']
+  UNLABELED: [
+    'beijing', 'dubai', 'jakarta', 'cairo', 'kigali', 'lagos', 'mexicocity', 'mumbai', 'riodejanairo', 'shanghai',
+    'buenosaires', 'bogota', 'sanjose', 'santiagodechile', 'kapstadt', 'tripoli', 'freetown', 'london', 'madrid',
+    'kinshasa', 'manila', 'moscow', 'newdehli', 'nursultan', 'tokio', 'stockholm', 'maputo', 'caracas',
+    'santacruzdelasierra', 'saopaulo', 'asuncion', 'lima', 'paramaribo', 'libreville', 'djibuti', 'beirut', 'baghdad',
+    'athens', 'islamabad', 'hanoi', 'bangkok', 'dhaka', 'bengaluru', 'taipeh', 'berlin', 'nanning', 'wuhan',
+    'daressalam', 'milano', 'zhengzhou', 'hefei', 'xian', 'seoul', 'ibadan', 'benincity', 'abidjan', 'accra',
+    'amsterdam', 'riyadh', 'amman', 'damascus', 'nouakchott', 'prague', 'sanaa', 'kuwaitcity', 'tehran'
+  ]
 
 
 

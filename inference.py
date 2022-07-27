@@ -5,12 +5,11 @@ from tqdm import tqdm
 from utils import geofiles, experiment_manager, networks, datasets, parsers
 
 
-def run_inference(config_name: str, site: str):
+def run_inference(cfg: experiment_manager.CfgNode, site: str):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # loading config and network
-    cfg = experiment_manager.load_cfg(config_name)
-    net, _, _ = networks.load_checkpoint(cfg.INFERENCE.CHECKPOINT, cfg, device)
+    net, _, _ = networks.load_checkpoint(cfg.INFERENCE_CHECKPOINT, cfg, device)
     net.eval()
 
     # loading dataset from config (requires inference.json)
@@ -36,9 +35,9 @@ def run_inference(config_name: str, site: str):
             prob_output[i_start:i_end, j_start:j_end, 0] = center_prob
 
     # config inference directory
-    out_folder = Path(cfg.PATHS.OUTPUT) / 'inference' / config_name
+    out_folder = Path(cfg.PATHS.OUTPUT) / 'inference' / cfg.NAME
     out_folder.mkdir(exist_ok=True)
-    out_file = out_folder / f'buap_{site}_{config_name}.tif'
+    out_file = out_folder / f'pred_{site}_{cfg.NAME}.tif'
     geofiles.write_tif(out_file, prob_output, transform, crs)
 
 
@@ -72,8 +71,22 @@ def produce_label(config_name: str, site: str):
 
 
 if __name__ == '__main__':
-    args = parsers.training_argument_parser().parse_known_args()[0]
+    args = parsers.testing_inference_argument_parser().parse_known_args()[0]
     cfg = experiment_manager.setup_cfg(args)
-
-
-    run_inference_spacenet7('fusionda')
+    sites = ['albuquerque', 'atlantaeast', 'atlantawest', 'charlston', 'columbus', 'dallas', 'denver', 'elpaso',
+             'houston', 'kansascity', 'lasvegas', 'losangeles', 'miami', 'minneapolis', 'montreal', 'phoenix',
+             'quebec', 'saltlakecity', 'sandiego', 'santafe', 'seattle', 'stgeorge', 'toronto', 'tucson', 'winnipeg',
+             'sidney', 'perth', 'calgary', 'newyork', 'sanfrancisco', 'vancouver', 'beijing', 'dubai', 'jakarta',
+             'kairo', 'kigali', 'lagos', 'mexicocity', 'mumbai', 'riodejanairo', 'shanghai', 'buenosaires', 'bogota',
+             'sanjose', 'santiagodechile', 'kapstadt', 'tripoli', 'freetown', 'london', 'madrid', 'kinshasa', 'manila',
+             'moscow', 'newdehli', 'nursultan', 'tokio', 'stockholm', 'maputo', 'caracas', 'santacruzdelasierra',
+             'saopaulo', 'asuncion', 'lima', 'paramaribo', 'libreville', 'djibuti', 'beirut', 'baghdad', 'athens',
+             'islamabad', 'hanoi', 'bangkok', 'dhaka', 'bengaluru', 'taipeh', 'berlin', 'nanning', 'wuhan',
+             'daressalam', 'milano', 'zhengzhou', 'hefei', 'xian', 'seoul', 'ibadan', 'benincity', 'abidjan', 'accra',
+             'amsterdam', 'riyadh', 'amman', 'damascus', 'nouakchott', 'prague', 'sanaa', 'kuwaitcity', 'tehran',
+             'atlanta']
+    turned_on = True
+    for site in sites:
+        print(site)
+        if turned_on:
+            run_inference(cfg, site)

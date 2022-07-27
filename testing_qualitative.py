@@ -69,13 +69,13 @@ def qualitative_sota_comparison(cfg: experiment_manager.CfgNode):
         ax_ghs = axs[1, 0]
         ghs_file = Path(dataset_path) / 'spacenet7' / 'ghs' / f'ghs_{aoi_id}.tif'
         visualization.plot_buildings(ax_ghs, ghs_file, get_ghs_threshold(dataset_path, aoi_id))
-        ax_ghs.set_xlabel(f'(d) GHS-S2', fontsize=FONTSIZE)
+        ax_ghs.set_xlabel(f'(d) GHS-BUILT-S2', fontsize=FONTSIZE)
         ax_ghs.xaxis.set_label_coords(0.5, -0.025)
 
         ax_wsf2019 = axs[1, 1]
         wsf2019_file = Path(dataset_path) / 'spacenet7' / 'wsf2019' / f'wsf2019_{aoi_id}.tif'
         visualization.plot_buildings(ax_wsf2019, wsf2019_file, 0)
-        ax_wsf2019.set_xlabel(f'(e) WSF2019', fontsize=FONTSIZE)
+        ax_wsf2019.set_xlabel(f'(e) WSF 2019', fontsize=FONTSIZE)
         ax_wsf2019.xaxis.set_label_coords(0.5, -0.025)
 
         ax_ours = axs[1, 2]
@@ -150,7 +150,7 @@ def regional_ghs_comparison_histograms(cfg: experiment_manager.CfgNode):
         data = get_quantitative_data(cfg.PATHS.OUTPUT, 'ghs')
         y_prob = np.concatenate([site['y_prob'] for site in data[region]]).flatten()
         weights = np.ones_like(y_prob) / len(y_prob)
-        ax.hist(y_prob, weights=weights, bins=25, alpha=0.6, label='GHS-S2')
+        ax.hist(y_prob, weights=weights, bins=25, alpha=0.6, label='GHS-BUILT-S2')
 
         # ours (cfg)
         data = get_quantitative_data(cfg.PATHS.OUTPUT, cfg.NAME)
@@ -242,7 +242,161 @@ def regional_comparison_boxplots(metric: str, metric_name: str, cfg: experiment_
     axs[1, 0].legend(handles, names, loc='lower left', ncol=2, frameon=False, handletextpad=0.5,
                      columnspacing=0.8, handlelength=0.6, fontsize=FONTSIZE)
     plt.tight_layout()
-    output_file = Path(cfg.PATHS.OUTPUT) / 'plots' / f'boxplots_{metric}_{cfg.NAME}.jpeg'
+    output_file = Path(cfg.PATHS.OUTPUT) / 'plots' / f'boxplots_{metric}_{cfg.NAME}.png'
+    plt.savefig(output_file, dpi=300, bbox_inches='tight', format='png')
+    plt.close(fig)
+
+
+def site_comparison_barcharts_old1(metric: str, metric_name: str, cfg: experiment_manager.CfgNode):
+    config_names = ['sar', 'optical', 'fusion', cfg.NAME, 'ghs', 'wsf2019']
+    names = ['SAR', 'Opt', 'Fus.', 'Fus.-DA', 'GHS', 'WSF']
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#e377c2']
+    region_names = get_region_names(cfg.PATHS.DATASET)
+
+    m, n = 6, 10
+    fig, axs = plt.subplots(m, n, figsize=(20, 20), sharey=True)
+    plt.tight_layout(rect=[0, 0, 0.75, 1]  )
+    fig.subplots_adjust(hspace=0.2, wspace=0.05)
+    for j, config_name in enumerate(config_names):
+        data = get_quantitative_data(cfg.PATHS.OUTPUT, config_name)
+        plot_index = 0
+        for region in region_names:
+            regional_data = data[region]
+            for site in regional_data:
+                ax_i = plot_index // n
+                ax_j = plot_index % n
+                ax = axs[ax_i, ax_j]
+                ax.yaxis.grid(True)
+                if ax_j == 0:
+                    ax.set_ylabel(metric_name, fontsize=FONTSIZE)
+                ax.bar(
+                    x=j,
+                    height=site[metric],
+                    width=0.4,
+                    color=colors[j],
+                    edgecolor='k',
+                    linewidth=1,
+                    label=names[j],
+                )
+                domain = 'S' if region == 'NWW' else 'T'
+                title = f'AOI {plot_index+1} ({domain})'
+                ax.set_title(title, fontsize=FONTSIZE)
+                plot_index += 1
+
+        for _, ax in np.ndenumerate(axs):
+            ax.set_ylim((0, 1))
+            ax.set_xticks([])
+
+    output_file = Path(cfg.PATHS.OUTPUT) / 'plots' / f'barplots_{metric}_{cfg.NAME}.jpeg'
+    plt.savefig(output_file, dpi=300, bbox_inches='tight', format='jpeg')
+    plt.close(fig)
+
+
+def site_comparison_barcharts_old2(metric: str, metric_name: str, cfg: experiment_manager.CfgNode):
+    config_names = ['sar', 'optical', 'fusion', cfg.NAME, 'ghs', 'wsf2019']
+    names = ['SAR', 'Optical', 'Fusion', 'Fusion-DA', 'GHS-S2', 'WSF2019']
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#e377c2']
+    region_names = get_region_names(cfg.PATHS.DATASET)
+
+    m, n = 6, 10
+    fig, axs = plt.subplots(m, n, figsize=(20, 20), sharey=True)
+    plt.tight_layout(rect=[0, 0, 0.75, 1])
+    fig.subplots_adjust(hspace=0.15, wspace=0.1)
+    for j, config_name in enumerate(config_names):
+        data = get_quantitative_data(cfg.PATHS.OUTPUT, config_name)
+        plot_index = 0
+        for region in region_names:
+            regional_data = data[region]
+            for site in regional_data:
+
+                aoi_id = site['aoi_id']
+                score = site[metric]
+                if score < 0.1:
+                    print(f'{config_name} {aoi_id}: {score:.3f}')
+
+                ax_i = plot_index // n
+                ax_j = plot_index % n
+                ax = axs[ax_i, ax_j]
+                ax.yaxis.grid(True)
+                if ax_j == 0:
+                    ax.set_ylabel(metric_name, fontsize=FONTSIZE)
+                ax.bar(
+                    x=j,
+                    height=site[metric],
+                    width=0.4,
+                    color=colors[j],
+                    edgecolor='k',
+                    linewidth=1,
+                    label=names[j],
+                )
+                domain = 'S' if region == 'NWW' else 'T'
+                title = f'AOI {plot_index + 1} ({domain})'
+                ax.set_title(title, fontsize=FONTSIZE)
+                plot_index += 1
+
+        for _, ax in np.ndenumerate(axs):
+            ax.set_ylim((0, 1))
+            ax.set_xticks([])
+
+    handles = [Patch(facecolor=color, edgecolor=color) for color in colors]
+    fig.legend(handles, names, loc='lower center', ncol=len(colors), frameon=False, handletextpad=0.5,
+               columnspacing=0.8, handlelength=0.6, fontsize=FONTSIZE)
+
+    output_file = Path(cfg.PATHS.OUTPUT) / 'plots' / f'barplots_{metric}_{cfg.NAME}.jpeg'
+    plt.savefig(output_file, dpi=300, bbox_inches='tight', format='jpeg')
+    plt.close(fig)
+
+
+def site_comparison_barcharts(metric: str, metric_name: str, cfg: experiment_manager.CfgNode):
+    config_names = ['sar', 'optical', 'fusion', cfg.NAME, 'ghs', 'wsf2019']
+    names = ['SAR', 'Optical', 'Fusion', 'Fusion-DA', 'GHS-BUILT-S2', 'WSF 2019']
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#e377c2']
+    region_names = get_region_names(cfg.PATHS.DATASET)
+    sn7_data = geofiles.load_json(Path(cfg.PATHS.DATASET) / 'spacenet7' / 'samples.json')
+    aoi_ids = sorted([s['aoi_id'] for s in sn7_data['samples']])
+
+    m, n = 6, 10
+    fig, axs = plt.subplots(m, n, figsize=(20, 20), sharey=True)
+    plt.tight_layout(rect=[0, 0, 0.75, 1])
+    fig.subplots_adjust(hspace=0.15, wspace=0.1)
+    for j, config_name in enumerate(config_names):
+        data = get_quantitative_data(cfg.PATHS.OUTPUT, config_name)
+        for region in region_names:
+            regional_data = data[region]
+            for site in regional_data:
+
+                aoi_id = site['aoi_id']
+                plot_index = aoi_ids.index(aoi_id)
+
+                ax_i = plot_index // n
+                ax_j = plot_index % n
+                ax = axs[ax_i, ax_j]
+                ax.yaxis.grid(True)
+                if ax_j == 0:
+                    ax.set_ylabel(metric_name, fontsize=FONTSIZE)
+                ax.bar(
+                    x=j,
+                    height=site[metric],
+                    width=0.4,
+                    color=colors[j],
+                    edgecolor='k',
+                    linewidth=1,
+                    label=names[j],
+                )
+                domain = 'S' if region == 'NWW' else f'T {region}'
+                title = f'{plot_index + 1}) {domain}'
+                ax.set_title(title, fontsize=FONTSIZE)
+                plot_index += 1
+
+        for _, ax in np.ndenumerate(axs):
+            ax.set_ylim((0, 1))
+            ax.set_xticks([])
+
+    handles = [Patch(facecolor=color, edgecolor=color) for color in colors]
+    fig.legend(handles, names, loc='lower center', ncol=len(colors), frameon=False, handletextpad=0.5,
+               columnspacing=0.8, handlelength=0.6, fontsize=FONTSIZE)
+
+    output_file = Path(cfg.PATHS.OUTPUT) / 'plots' / f'barplots_{metric}_{cfg.NAME}.jpeg'
     plt.savefig(output_file, dpi=300, bbox_inches='tight', format='jpeg')
     plt.close(fig)
 
@@ -251,8 +405,9 @@ if __name__ == '__main__':
     args = parsers.testing_inference_argument_parser().parse_known_args()[0]
     cfg = experiment_manager.setup_cfg(args)
     # qualitative_testing(cfg)
-    qualitative_sota_comparison(cfg)
+    # qualitative_sota_comparison(cfg)
+    # site_comparison_barcharts('kappa', 'Kappa', cfg)
     # regional_ghs_comparison_histograms(cfg)
     # metrics = ['f1_score', 'precision', 'recall', 'iou']
     # metric_names = ['F1 score', 'Precision', 'Recall', 'IoU']
-    # regional_comparison_boxplots('f1_score', 'F1 score', cfg, 4)
+    regional_comparison_boxplots('iou', 'IoU', cfg, 4)

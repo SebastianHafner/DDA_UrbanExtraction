@@ -49,7 +49,7 @@ DATASET:
   VALIDATION: ['calgary', 'newyork', 'sanfrancisco', 'vancouver']
   UNLABELED: [
     'beijing', 'dubai', 'jakarta', 'cairo', 'kigali', 'lagos', 'mexicocity', 'mumbai', 'riodejanairo', 'shanghai',
-    'buenosaires', 'bogota', 'sanjose', 'santiagodechile', 'kapstadt', 'tripoli', 'freetown', 'london', 'madrid',
+    'buenosaires', 'bogota', 'sanjose', 'santiagodechile', 'capetown', 'tripoli', 'freetown', 'london', 'madrid',
     'kinshasa', 'manila', 'moscow', 'newdehli', 'nursultan', 'tokio', 'stockholm', 'maputo', 'caracas',
     'santacruzdelasierra', 'saopaulo', 'asuncion', 'lima', 'paramaribo', 'libreville', 'djibuti', 'beirut', 'baghdad',
     'athens', 'islamabad', 'hanoi', 'bangkok', 'dhaka', 'bengaluru', 'taipeh', 'berlin', 'nanning', 'wuhan',

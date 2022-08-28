@@ -44,7 +44,7 @@ DATASET:
   TRAINING: [
     'albuquerque', 'atlantaeast', 'atlantawest', 'charlston', 'columbus', 'dallas', 'denver', 'elpaso', 'houston',
     'kansascity', 'lasvegas', 'losangeles', 'miami', 'minneapolis', 'montreal', 'phoenix', 'quebec', 'saltlakecity',
-    'sandiego', 'santafe', 'seattle', 'stgeorge', 'toronto', 'tucson', 'winnipeg', 'sydney', 'perth'
+    'sandiego', 'santafe', 'seattle', 'stgeorge', 'toronto', 'tucson', 'winnipeg', 'sydney'
   ]
   VALIDATION: ['calgary', 'newyork', 'sanfrancisco', 'vancouver']
   UNLABELED: [

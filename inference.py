@@ -41,50 +41,10 @@ def run_inference(cfg: experiment_manager.CfgNode, site: str):
     geofiles.write_tif(out_file, prob_output, transform, crs)
 
 
-def produce_label(config_name: str, site: str):
-    print(f'producing label for {site} with {config_name}...')
-
-    dirs = paths.load_paths()
-
-    # loading config and dataset
-    cfg = experiment_manager.load_cfg(config_name)
-    dataset = datasets.TilesInferenceDataset(cfg, site)
-
-    label_output = dataset.get_arr()
-    transform, crs = dataset.get_geo()
-
-    for i in tqdm(range(len(dataset))):
-        patch = dataset.__getitem__(i)
-        label = patch['y'].cpu().numpy().squeeze().astype('uint8')
-        label = np.clip(label * 100, 0, 100)
-
-        i_start = patch['i']
-        i_end = i_start + dataset.patch_size
-        j_start = patch['j']
-        j_end = j_start + dataset.patch_size
-        label_output[i_start:i_end, j_start:j_end, 0] = label
-
-    save_path = Path(dirs.OUTPUT) / 'inference' / config_name
-    save_path.mkdir(exist_ok=True)
-    output_file = save_path / f'label_{site}_{config_name}.tif'
-    geofiles.write_tif(output_file, label_output, transform, crs)
-
-
 if __name__ == '__main__':
     args = parsers.testing_inference_argument_parser().parse_known_args()[0]
     cfg = experiment_manager.setup_cfg(args)
-    sites = ['albuquerque', 'atlantaeast', 'atlantawest', 'charlston', 'columbus', 'dallas', 'denver', 'elpaso',
-             'houston', 'kansascity', 'lasvegas', 'losangeles', 'miami', 'minneapolis', 'montreal', 'phoenix',
-             'quebec', 'saltlakecity', 'sandiego', 'santafe', 'seattle', 'stgeorge', 'toronto', 'tucson', 'winnipeg',
-             'sidney', 'perth', 'calgary', 'newyork', 'sanfrancisco', 'vancouver', 'beijing', 'dubai', 'jakarta',
-             'kairo', 'kigali', 'lagos', 'mexicocity', 'mumbai', 'riodejanairo', 'shanghai', 'buenosaires', 'bogota',
-             'sanjose', 'santiagodechile', 'kapstadt', 'tripoli', 'freetown', 'london', 'madrid', 'kinshasa', 'manila',
-             'moscow', 'newdehli', 'nursultan', 'tokio', 'stockholm', 'maputo', 'caracas', 'santacruzdelasierra',
-             'saopaulo', 'asuncion', 'lima', 'paramaribo', 'libreville', 'djibuti', 'beirut', 'baghdad', 'athens',
-             'islamabad', 'hanoi', 'bangkok', 'dhaka', 'bengaluru', 'taipeh', 'berlin', 'nanning', 'wuhan',
-             'daressalam', 'milano', 'zhengzhou', 'hefei', 'xian', 'seoul', 'ibadan', 'benincity', 'abidjan', 'accra',
-             'amsterdam', 'riyadh', 'amman', 'damascus', 'nouakchott', 'prague', 'sanaa', 'kuwaitcity', 'tehran',
-             'atlanta']
+    sites = ['athens2018', 'milan2018', 'brussels2018']
     turned_on = True
     for site in sites:
         print(site)

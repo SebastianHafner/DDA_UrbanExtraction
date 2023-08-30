@@ -35,7 +35,7 @@ def run_inference(cfg: experiment_manager.CfgNode, site: str):
             prob_output[i_start:i_end, j_start:j_end, 0] = center_prob
 
     # config inference directory
-    out_folder = Path(cfg.PATHS.OUTPUT) / 'inference' / cfg.NAME
+    out_folder = Path(cfg.PATHS.OUTPUT) / 'inference_test' / cfg.NAME
     out_folder.mkdir(exist_ok=True)
     out_file = out_folder / f'pred_{site}_{cfg.NAME}.tif'
     geofiles.write_tif(out_file, prob_output, transform, crs)
@@ -44,7 +44,7 @@ def run_inference(cfg: experiment_manager.CfgNode, site: str):
 if __name__ == '__main__':
     args = parsers.testing_inference_argument_parser().parse_known_args()[0]
     cfg = experiment_manager.setup_cfg(args)
-    sites = ['athens2018', 'milan2018', 'brussels2018']
+    sites = ['examplegee']
     turned_on = True
     for site in sites:
         print(site)

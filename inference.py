@@ -5,6 +5,62 @@ from tqdm import tqdm
 from utils import geofiles, experiment_manager, networks, datasets, parsers
 
 
+def preprocess_inference(cfg: experiment_manager.CfgNode, site: str):
+    dataset_path = Path(cfg.PATHS.DATASET)
+
+    # get all patches
+    sentinel1_path = dataset_path / site / 'sentinel1'
+    patches = ['-'.join(f.stem.split('-')[-2:]) for f in sentinel1_path.glob('**/*')]
+
+    # renaming files (this is necessary for data downloaded from Google Drive because GEE handles file names
+    # when uploading to drive instead of the cloud platform
+    for sensor in ['sentinel1', 'sentinel2']:
+        for patch_id in patches:
+            file = dataset_path / site / sensor / f'{sensor}_{site}-{patch_id}.tif'
+            new_file = dataset_path / site / sensor / f'{sensor}_{site}_{patch_id}.tif'
+            if file.exists():
+                file.rename(new_file)
+
+    # create the sample file
+    samples_file = dataset_path / site / 'samples.json'
+    if not samples_file.exists():
+        patches = [f.stem.split('_')[-1] for f in (dataset_path / site / 'sentinel1').glob('**/*')]
+
+        data = {
+            'label': 'buildings',
+            'site': site,
+            'patch_size': 256,
+            'sentinel1_features': ['VV', 'VH'],
+            'sentinel2_features': ['B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B11', 'B12'],
+            'samples': []
+        }
+
+        max_x = max_y = 0
+        for patch_id in patches:
+
+            sample = {
+                'site': site,
+                'patch_id': patch_id,
+                'is_labeled': False,
+                'img_weight': -1
+            }
+
+            file = dataset_path / site / 'sentinel1' / f'sentinel1_{site}_{patch_id}.tif'
+            arr, *_ = geofiles.read_tif(file)
+            m, n, _ = arr.shape
+
+            if m == 256 and n == 256:
+                data['samples'].append(sample)
+                y, x = int(patch_id.split('-')[0]), int(patch_id.split('-')[1])
+                max_x = x if x > max_x else max_x
+                max_y = y if y > max_y else max_y
+
+        data['max_x'] = max_x
+        data['max_y'] = max_y
+
+        geofiles.write_json(samples_file, data)
+
+
 def run_inference(cfg: experiment_manager.CfgNode, site: str):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -41,52 +97,9 @@ def run_inference(cfg: experiment_manager.CfgNode, site: str):
     geofiles.write_tif(out_file, prob_output, transform, crs)
 
 
-def produce_label(config_name: str, site: str):
-    print(f'producing label for {site} with {config_name}...')
-
-    dirs = paths.load_paths()
-
-    # loading config and dataset
-    cfg = experiment_manager.load_cfg(config_name)
-    dataset = datasets.TilesInferenceDataset(cfg, site)
-
-    label_output = dataset.get_arr()
-    transform, crs = dataset.get_geo()
-
-    for i in tqdm(range(len(dataset))):
-        patch = dataset.__getitem__(i)
-        label = patch['y'].cpu().numpy().squeeze().astype('uint8')
-        label = np.clip(label * 100, 0, 100)
-
-        i_start = patch['i']
-        i_end = i_start + dataset.patch_size
-        j_start = patch['j']
-        j_end = j_start + dataset.patch_size
-        label_output[i_start:i_end, j_start:j_end, 0] = label
-
-    save_path = Path(dirs.OUTPUT) / 'inference' / config_name
-    save_path.mkdir(exist_ok=True)
-    output_file = save_path / f'label_{site}_{config_name}.tif'
-    geofiles.write_tif(output_file, label_output, transform, crs)
-
-
 if __name__ == '__main__':
-    args = parsers.testing_inference_argument_parser().parse_known_args()[0]
+    args = parsers.inference_argument_parser().parse_known_args()[0]
     cfg = experiment_manager.setup_cfg(args)
-    sites = ['albuquerque', 'atlantaeast', 'atlantawest', 'charlston', 'columbus', 'dallas', 'denver', 'elpaso',
-             'houston', 'kansascity', 'lasvegas', 'losangeles', 'miami', 'minneapolis', 'montreal', 'phoenix',
-             'quebec', 'saltlakecity', 'sandiego', 'santafe', 'seattle', 'stgeorge', 'toronto', 'tucson', 'winnipeg',
-             'sidney', 'perth', 'calgary', 'newyork', 'sanfrancisco', 'vancouver', 'beijing', 'dubai', 'jakarta',
-             'kairo', 'kigali', 'lagos', 'mexicocity', 'mumbai', 'riodejanairo', 'shanghai', 'buenosaires', 'bogota',
-             'sanjose', 'santiagodechile', 'kapstadt', 'tripoli', 'freetown', 'london', 'madrid', 'kinshasa', 'manila',
-             'moscow', 'newdehli', 'nursultan', 'tokio', 'stockholm', 'maputo', 'caracas', 'santacruzdelasierra',
-             'saopaulo', 'asuncion', 'lima', 'paramaribo', 'libreville', 'djibuti', 'beirut', 'baghdad', 'athens',
-             'islamabad', 'hanoi', 'bangkok', 'dhaka', 'bengaluru', 'taipeh', 'berlin', 'nanning', 'wuhan',
-             'daressalam', 'milano', 'zhengzhou', 'hefei', 'xian', 'seoul', 'ibadan', 'benincity', 'abidjan', 'accra',
-             'amsterdam', 'riyadh', 'amman', 'damascus', 'nouakchott', 'prague', 'sanaa', 'kuwaitcity', 'tehran',
-             'atlanta']
-    turned_on = True
-    for site in sites:
-        print(site)
-        if turned_on:
-            run_inference(cfg, site)
+    for site in args.sites:
+        preprocess_inference(cfg, site)
+        run_inference(cfg, site)

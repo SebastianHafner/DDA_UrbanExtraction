@@ -1,0 +1,12 @@
+_BASE_: "fusionda_base.yaml"
+DEBUG: False
+
+MODEL:
+  TYPE: 'dualstreamunet'
+  OUT_CHANNELS: 1
+  IN_CHANNELS: 6
+
+DATALOADER:
+  MODE: 'fusion'
+  SENTINEL1_BANDS: ['VV', 'VH']
+  SENTINEL2_BANDS: ['B2', 'B3', 'B4', 'B8']

@@ -1,24 +1,83 @@
 
+# Unsupervised domain adaptation for global urban extraction using Sentinel-1 SAR and Sentinel-2 MSI data 
 
-Code for the following Paper:
+
+This repository contains the official code for the following Paper:
 
 Hafner, S., Ban, Y. and Nascetti, A., 2022. Unsupervised domain adaptation for global urban extraction using Sentinel-1 SAR and Sentinel-2 MSI data. Remote Sensing of Environment, 280, p.113192.
 
 [[Paper](https://doi.org/10.1016/j.rse.2022.113192)] 
 
-# Abstract
-
-
-Accurate and up-to-date maps of Built-Up Area (BUA) are crucial to support sustainable urban development. Earth Observation (EO) is a valuable tool to cover this demand. In particularly, the Copernicus EO program provides satellite imagery with worldwide coverage, offering new opportunities for mapping BUA at global scale. Recent urban mapping efforts achieved promising results by training Convolutional Neural Networks (CNNs) on available products using Sentinel-2 MultiSpectral Instrument (MSI) images as input, but strongly depend on the availability of local reference data for fully supervised training or assume that the application of CNNs to unseen areas (i.e.\ across-region generalization) produce satisfactory results. To alleviate these shortcomings, it is desirable to leverage Semi-Supervised Learning (SSL) algorithms which can leverage unlabeled data, especially because satellite data is plentiful. In this paper, we propose a Domain Adaptation (DA) using SSL that exploits multi-modal satellite data from Sentinel-1 Synthetic Aperture Radar (SAR) and Sentinel-2 MSI to improve across-region generalization for BUA mapping. Specifically, two identical sub-networks are incorporated into the proposed model to perform BUA segmentation from Sentinel-1 SAR and Sentinel-2 MSI images separately. Assuming that consistent BUA segmentation should be obtained across data modality, we design an unsupervised loss for unlabeled data that penalizes inconsistent segmentation from the two sub-networks. Therefore, we propose to use complementary data modalities as real-world perturbations for consistency regularization. For the final prediction, the model takes both data modalities into consideration. Experiments conducted on a test set comprised of sixty representative sites across the world demonstrate a significant improvements of the proposed DA approach (F1 score 0.694) upon fully supervised learning from Sentinel-1 SAR data (F1 score 0.574), Sentinel-2 MSI data (F1 score 0.580) and their input-level fusion (F1 score 0.651). To demonstrate the effectiveness of DA we also compared our BUA maps with a state-of-the-art product in multiple cities across the world. The comparison showed that our model produces BUA maps with comparable or even better quality.
-
-# Our unsupervised domain adaptation approach
-
-Overview of our unsupervised domain adaptation approach. Model parameters are optimized with a supervised loss and a consistency loss for labeled and unlabeled data, respectively. Supervised loss is comprised of three loss terms: two for the sub-networks and one for the fusion of the features extracted from the sub-networks. Consistency loss is used to optimize model parameters in a unsupervised manner by training the sub-networks to agree on their predictions. The fusion prediction is used for inference.
-
 ![](figures/domain_adaptation_workflow_revised.png)
 
+# Setup
 
-# Replicating our results
+Models were trained with Ubuntu 18.04.6 LTS, Python 3.9.7, PyTorch 1.10.0, and CUDA 11.4.
+
+The main packages are listed below:
+
+```
+torch 0.10.0
+torchvision 0.11.1
+rasterio 1.2.10
+```
+
+To install the `rasterio` package on Windows, consider using the [Unofficial Windows Binaries for Python Extension Packages](https://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal).
+
+
+# Generating built-up area maps
+
+In order to extraction urban areas for any region of interest, follow this simple 3-step process:
+
+## 1 Data download
+
+The Sentinel-1 SAR and Sentinel-2 MSI data is downloaded from [Google Earth Engine](https://earthengine.google.com/) (GEE). Use the following script as a template and replace parameters with those of your region of interest (detailed instructions are provided in the script).
+
+
+After having run the script (and submitting the tasks in the `Task` panel), the Sentinel-1 and Sentinel-2 data will be in the Google Drive folders `urban_extraction_sentinel1_*roi*` and `urban_extraction_sentinel2_*roi*`, respectively.
+
+Download the folders, rename them according to the sensor (i.e., `sentinel1` and `sentinel2`), and place them in a folder named after your region of interest:
+```
+$ Satellite data directory
+*data_dir*
+└── *roi* # this folder can also be placed in your dataset directory as an additional site
+    ├── sentinel1
+    ├── sentinel1
+    └── samples.json # this file will be added when running inference.py (step 3)
+```
+
+## 2 Download the pre-trained model
+
+Download the pre-trained model and place it in the `networks` folder.
+
+Pre-trained models can be downloaded from the following link: [`here`](https://www.dropbox.com/sh/0m8t6dq37f11ukx/AAAgTgIxr_eyJJeHWqZ_SRVYa?dl=0). We strongly recommend using the proposed `fusionda` model.
+
+Your networks folder should now contain the network file. Additionally, set up an inference folder:
+```
+$ Output data directory
+output
+├── networks
+|    └── fusionda_checkpoint15.pt
+└── inference
+```
+## 3 Run inference
+
+Finally, run the `inference.py` file with the following arguments:
+```
+python inference.py -c fusionda -s *roi* -o *path to output directory* -d *path to data dir*
+```
+
+## 4 Stitching together the satellite patches (optional)
+
+
+
+
+
+
+# Training from scratch
+
+If you want to train your own networks from scratch, follow these steps:
+
 ## 1 Dataset download
 
 
@@ -38,12 +97,14 @@ Likewise, the baselines can be replicated by running ``train_network.py`` with t
 
 
 
-
-
 ## 3 Model evaluation and inference
 
 
 Run the files ``testing_quantitative.py`` and ``testing_qualitative.py`` with a config of choice and the path settings from above to assess network performance. For inference, use the file ``testing_inference.py`` instead.
+
+
+## 4 Adding unlabeled data for further domain adaptation (optional)
+
 
 
 # Credits

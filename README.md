@@ -23,14 +23,14 @@ Then, follow these steps to generate built-up area maps for your own region of i
 
 1. Create a folder named `urban_extraction_app` in your Google Drive
 
-2. Download the model from [here](https://drive.google.com/file/d/1CM_sr7v5PYDk52VDxh5xBDhH-ZWJQsgW/view?usp=sharing) (Google Drive) and place it in the `urban_extraction_app` folder. Also make a copy of this Colab notebook [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DAI-Lab/Cardea/) in the same folder. Your folder should now contain the following files:
+2. Download the model from [here](https://drive.google.com/file/d/1CM_sr7v5PYDk52VDxh5xBDhH-ZWJQsgW/view?usp=sharing) (Google Drive) and place it in the `urban_extraction_app` folder. Also make a copy of this [Colab notebook](https://colab.research.google.com/drive/1JHDiYqMS7T7izH_ytPdmbVy5NgzP1YvB?usp=sharing) in the same folder. Your folder should now contain the following files:
 
     ```
     $ Your Google Drive setup
     Your Google Drive
     └── urban_extraction_app
-        ├── urban_extraction_app.ipynb # this is the Colab notebook you can copy from here
-        └── fusionda_10m.pt # this is your model downloaded from here
+        ├── urban_extraction_app.ipynb # this is the Colab notebook you can copied
+        └── fusionda_10m.pt # this is the model you downloaded
     
     ```
 

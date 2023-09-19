@@ -34,7 +34,7 @@ Then, follow these steps to generate built-up area maps for your own region of i
     
     ```
 
-3. Download satellite data for your region of interest with the UI in this [script](https://code.earthengine.google.com/95953cf1e281e12f93152884f9120ff4?hideCode=true).
+3. Download satellite data for your region of interest with the UI in this [GEE script](https://code.earthengine.google.com/fd3790f3aa7b56e8be329effae4a575a?hideCode=true).
 
 ![](figures/gee_app.gif)
 
@@ -45,7 +45,7 @@ Then, follow these steps to generate built-up area maps for your own region of i
 
 
 
-## Or use this repo:
+## Or with the `inference.py` file in this repo:
 ### 1 Setup
 
 Our setup uses Ubuntu 18.04.6 LTS, Python 3.9.7, PyTorch 1.10.0, and CUDA 11.4. Additionally, rasterio (1.2.10) is required to handle GeoTIFF files. To install the `rasterio` package on Windows, consider using the [Unofficial Windows Binaries for Python Extension Packages](https://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal).
@@ -53,7 +53,7 @@ Our setup uses Ubuntu 18.04.6 LTS, Python 3.9.7, PyTorch 1.10.0, and CUDA 11.4. 
 
 ### 2 Data download
 
-The Sentinel-1 SAR and Sentinel-2 MSI data is downloaded from [Google Earth Engine](https://earthengine.google.com/) (GEE). Use the following script as a template and replace parameters with those of your region of interest (detailed instructions are provided in the script).
+The Sentinel-1 SAR and Sentinel-2 MSI data is downloaded from [Google Earth Engine](https://earthengine.google.com/) (GEE). Use the UI in this [GEE script](https://code.earthengine.google.com/fd3790f3aa7b56e8be329effae4a575a?hideCode=true) to select satellite data for your region of interest. *Make sure to change 10m to all for the Sentinel-2 bands and check the tiling option!*
 
 
 After having run the script (and submitting the tasks in the Task panel), the Sentinel-1 and Sentinel-2 data will be in the Google Drive folders `urban_extraction_sentinel1_*roi*` and `urban_extraction_sentinel2_*roi*`, respectively.

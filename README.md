@@ -36,7 +36,7 @@ Then, follow these steps to generate built-up area maps for your own region of i
 
 3. Download satellite data for your region of interest with the UI in this [script](https://code.earthengine.google.com/95953cf1e281e12f93152884f9120ff4?hideCode=true).
 
-![](https://github.com/DDA_UrbanExtraction/gee_app.gif)
+![](figures/gee_app.gif)
 
 4. Run the Colab notebook to generate a built-up area map for your region of interest.
 

@@ -21,8 +21,8 @@ class MultiThresholdMetric(object):
 
         self.TP += (y_true & y_pred_offset).sum(dim=self._data_dims).float()
         self.TN += (~y_true & ~y_pred_offset).sum(dim=self._data_dims).float()
-        self.FP += (y_true & ~y_pred_offset).sum(dim=self._data_dims).float()
-        self.FN += (~y_true & y_pred_offset).sum(dim=self._data_dims).float()
+        self.FP += (~y_true & y_pred_offset).sum(dim=self._data_dims).float()
+        self.FN += (y_true & ~y_pred_offset).sum(dim=self._data_dims).float()
 
     @property
     def precision(self):
